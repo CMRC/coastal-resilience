@@ -1,0 +1,24 @@
+"MIKE: Cork Harbour"	"Commerce, Industry and Manufacturing"	"Residential Development"	"Agriculture"	"Environmental Legislation and Policy"	"Terrestrial Traffic"	"Marine Pollution"	"Enforcement: Environmental Protection"	"Port and Marina Facilities"	"Coastal Squeeze"	"Coastal Processes: Altered/Constrained"	"Wetlands: Reduced/Degraded"	"Benthic Habitat: Degraded"	"River Systems: Altered/Channelised"	"Sea Water Quality: High/Improving"	"Marine Transport and Navigation"	"Flood Protection: Storm Surge/Tidal"	"Flood Protection: Fluvial"	"Coastal Amenity: Leisure/Recreation"	"Bioremdiation: Waste Processing and Removal"	"NGO Protest"	"Seek Investment: Central Govt."	"Individual Insurance Cover"	"Local Authority Planning Decisions"
+"Commerce, Industry and Manufacturing"	0.00	0.00	0.00	-0.75	0.00	0.75	0.00	0.75	0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Residential Development"	0.00	0.00	0.00	0.00	0.75	0.75	0.00	0.50	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Agriculture"	0.00	0.00	0.00	-0.75	0.00	0.75	0.00	0.25	0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Environmental Legislation and Policy"	-0.50	-0.25	-0.25	0.00	0.00	0.00	0.00	0.00	-0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Terrestrial Traffic"	0.00	0.00	0.00	0.00	0.00	0.25	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Marine Pollution"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.75	0.00	-0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Enforcement: Environmental Protection"	0.00	0.00	0.00	0.00	0.00	-0.50	0.00	-0.25	-0.25	0.00	0.00	0.00	0.00	0.50	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Port and Marina Facilities"	0.00	0.25	0.00	0.00	0.00	0.50	0.00	0.00	0.00	0.75	0.50	0.75	0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Coastal Squeeze"	-0.25	-0.25	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.75	0.75	0.75	0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Coastal Processes: Altered/Constrained"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	-0.75	-0.25	-0.50	0.00	0.00	0.00	0.00	0.00
+"Wetlands: Reduced/Degraded"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	-0.75	-0.50	-0.75	-0.75	0.00	0.00	0.00	0.00
+"Benthic Habitat: Degraded"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	-0.75	0.00	0.00	0.00	0.00
+"River Systems: Altered/Channelised"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.75	-0.75	0.00	-0.50	0.00	0.00	0.00	0.00	0.00
+"Sea Water Quality: High/Improving"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.50	0.00	0.00	0.00	0.00	0.00
+"Marine Transport and Navigation"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Flood Protection: Storm Surge/Tidal"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.50	0.50	0.25	0.50
+"Flood Protection: Fluvial"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.75	0.50	0.50	0.50
+"Coastal Amenity: Leisure/Recreation"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.75	0.00	0.00	0.00
+"Bioremdiation: Waste Processing and Removal"	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.50	0.00	0.00	0.00
+"NGO Protest"	-0.25	0.00	-0.25	0.00	0.00	0.00	0.75	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Seek Investment: Central Govt."	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.25	0.00	0.00	0.00	0.00	0.00	0.00
+"Individual Insurance Cover"	-0.50	-0.25	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
+"Local Authority Planning Decisions"	-0.25	-0.25	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00	0.00
