@@ -1,0 +1,17 @@
+
+* Coastal Resilience Fuzzy Cognitive Map visualisation
+
+
+** About
+
+http://coastalresilience.ie
+
+** To Run
+>lein dep
+>lein jar
+
+** You will need
+
+[[https://github.com/technomancy/leiningen][Leiningen]]
+
+GraphViz
