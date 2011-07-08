@@ -8,13 +8,14 @@
 
 
 
-(defn to-dot [line]
+(defn to-dot [line head gv]
   (let [linevec (str/split #"\t" line)
        nodename (first linevec)
        idv (map vector (iterate inc 0) (next linevec))]
        (doseq [[index value] idv]
 	      (if (not= (Float/parseFloat value) 0.0) 
-		  (println nodename "->" index)))))
+		  (.addln gv (str nodename "->" (nth head (+ index 1)) ";"))))))
+
 
 
 ;; Pass a map as the first argument to be 
@@ -32,22 +33,22 @@
   [id]
   (with-open [fr (java.io.FileReader. "data/Mike - FCM Cork Harbour.csv")
 	     br (java.io.BufferedReader. fr)]
-	     (doseq [line (next (line-seq br))] (to-dot line)))
-  (let [data (read-dataset "data/Mike - FCM Cork Harbour.csv" :header true)
-       gv (new GraphViz)]
-       (.addln gv (.start_graph gv))	
-       (.addln gv "A -> B;")
-       (.addln gv "A -> C;")
-       (.addln gv (.end_graph gv))
-       (let [graph (.getGraph gv (.getDotSource gv) "gif")
-	    in-stream (do
-			  (new ByteArrayInputStream graph))]
-			  {:status 200	 
-			  :headers {"Content-Type" "image/gif"}
-			  :body in-stream})))
-
-
-;; define routes
+	     (let 	     	
+		 [ls (line-seq br)
+		 head (str/split #"\t" (first ls))
+		 gv (new GraphViz)]
+		 (.addln gv (.start_graph gv))	
+		 (doseq [line (next ls)] (to-dot line head gv))
+		 (.addln gv (.end_graph gv))
+		 (let [graph (.getGraph gv (.getDotSource gv) "gif")
+		      in-stream (do
+				    (new ByteArrayInputStream graph))]
+				    {:status 200	 
+				    :headers {"Content-Type" "image/gif"}
+				    :body in-stream}))))
+  
+  
+  ;; define routes
 (defroutes webservice
   (GET "/:doi" [id] (graph-viz id) ))
 
