@@ -13,9 +13,10 @@
        nodename (first linevec)
        idv (map vector (iterate inc 0) (next linevec))]
        (doseq [[index value] idv]
-	      (let [weight (Float/parseFloat value)]
+	      (let [weight (Float/parseFloat value)
+		   colour (if (> weight 0) "blue" "red")]
 		   (if (not= weight 0.0) 
-		       (.addln gv (str nodename "->" (nth head (+ index 1)) "[ label =\"" (* weight 4) "\"];")))))))
+		       (.addln gv (str nodename "->" (nth head (+ index 1)) "[ label =\"" (* weight 4) "\", color=" colour "];")))))))
 
 
 
