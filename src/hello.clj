@@ -1,7 +1,9 @@
 (ns hello-world
     (:use compojure.core, ring.adapter.jetty, incanter.core, incanter.stats, incanter.charts,
 	  incanter.io ,hiccup.core)
-    (:require [compojure.route :as route] [clojure.contrib.string :as str])
+    (:require [compojure.route :as route] 
+	      [clojure.contrib.string :as str] 
+	      [clojure.contrib.math])
     (:import (java.io ByteArrayOutputStream
 		      ByteArrayInputStream),
 	     GraphViz))
@@ -16,8 +18,10 @@
 	      (let [weight (Float/parseFloat value)
 		   colour (if (> weight 0) "blue" "red")]
 		   (if (not= weight 0.0)
-		       ;;(.addln gv (str nodename "[shape=box];"))
-		       (.addln gv (str nodename "->" (nth head (+ index 1)) "[ label =\"" (* weight 4) "\", color=" colour "];")))))))
+		       (.addln gv 
+			       (str nodename "->" 
+				    (nth head (+ index 1)) 
+				    "[ label =\"" (* weight 4) "\", weight=" (* (abs weight) 4) ", color=" colour "];")))))))
 
 
 
