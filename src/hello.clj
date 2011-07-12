@@ -21,7 +21,10 @@
 		       (.addln gv 
 			       (str nodename "->" 
 				    (nth head (+ index 1)) 
-				    "[ label =\"" (* weight 4) "\", weight=" (* (abs weight) 4) ", color=" colour "];")))))))
+				    "[ headlabel =\"" (* weight 4) 
+				    "\", weight=" (* (abs weight) 4) 
+				    ", color=" colour 
+				    " labeldistance=3];")))))))
 
 
 
