@@ -5,8 +5,9 @@
 	      [clojure.contrib.string :as str] 
 	      [clojure.contrib.math])
     (:import (java.io ByteArrayOutputStream
-		      ByteArrayInputStream),
-	     GraphViz))
+		      ByteArrayInputStream)
+	     GraphViz
+	     (java.net URLEncoder)))
 
 
 
