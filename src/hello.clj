@@ -15,17 +15,20 @@
   [nodename]
   (URLEncoder/encode (str/replace-re #"[/\":,]" "" nodename)))
 
-(defn to-dot [line head id gv]
+(defn to-dot [line head id strength gv]
   (let [linevec (str/split #"\t" line)
        nodename (first linevec)
        idv (map vector (iterate inc 0) (next linevec))]
        (doseq [[index value] idv]
 	      (let [weight (Float/parseFloat value)
+		   min-weight (if (= strength "strong") 
+				  0.6 
+				(if (= strength "medium") 0.3 0.0))
 		   colour (if (or (not id) (= (encode-nodename nodename) 
 					      (encode-nodename id)))
-			      (if (> weight 0) "blue" "red")
+			      (if (> weight 0) "cornflowerblue" "red")
 			    "grey")]
-			    (if (not= weight 0.0)
+			    (if	(> (abs weight) min-weight) 
 				(.addln gv 
 					(str nodename "->" 
 					     (nth head (+ index 1)) 
@@ -35,14 +38,14 @@
 					     "];")))))))
 
 (defn print-node
-  [nodename id gv]
+  [nodename id strength gv]
   (let [url (encode-nodename nodename)
        fillcolour (if id 
-		      (if (= url (URLEncoder/encode id)) "blue" "gray81") "blue")]
-		      (.addln gv (str nodename " [shape=box,URL=\"/resilience/node/" url "\" color=" fillcolour ",style=filled];"))))
+		      (if (= url (URLEncoder/encode id)) "cornflowerblue" "gray81") "cornflowerblue")]
+		      (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/" strength "/node/" url "\" color=" fillcolour ",style=filled];"))))
 
 (defn do-graph
-  [id]
+  [id strength]
   (def gv (GraphViz.))
   (with-open [fr (java.io.FileReader. "data/Mike - FCM Cork Harbour.csv")
 	     br (java.io.BufferedReader. fr)]
@@ -50,19 +53,19 @@
 		 [ls (line-seq br)
 		 head (str/split #"\t" (first ls))]
 		 (.addln gv (.start_graph gv))
-		 (doseq [nodename (next head)] (print-node nodename id gv))
-		 (doseq [line (next ls)] (to-dot line head id gv))
+		 (doseq [nodename (next head)] (print-node nodename id strength gv))
+		 (doseq [line (next ls)] (to-dot line head id strength gv))
 		 (.addln gv (.end_graph gv)))))
 
 (defn do-map
-  [id]
-  (do-graph id)
+  [id strength]
+  (do-graph id strength)
   (let [graph (.getGraph gv (.getDotSource gv) "cmapx")]
        (String. graph)))
 
 (defn graph-viz
-  [id]
-  (do-graph id)
+  [id strength]
+  (do-graph id strength)
   (let [graph (.getGraph gv (.getDotSource gv) "gif")
        in-stream (do
 		     (ByteArrayInputStream. graph))]
@@ -71,22 +74,37 @@
 		     :body in-stream}))
   
 (defn html-doc 
-  [id] 
-  (html4
-   (do-map id)
-   [:div 
-   (str "<IMG SRC=\"/resilience/img/" id "\" border=\"0\" ismap usemap=\"#G\" />")]
+  [id strength] 
+  (html5
+   (do-map id strength)
+   [:div
+   [:ul
+   [:li (if (= strength "weak") 
+	    "weak"
+	  [:a {:href (str "/resilience/strength/weak/node/" id)} "weak"])]
+   [:li (if (= strength "medium") 
+	    "medium"
+	   [:a {:href (str "/resilience/strength/medium/node/" id)} "medium"])]
+   [:li (if (= strength "strong") 
+	    "strong"
+	   [:a {:href (str "/resilience/strength/strong/node/" id)} "strong"])]]
+   (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "\" border=\"0\" ismap usemap=\"#G\" />")]
    )) 
 
   
   ;; define routes
 (defroutes webservice
-  (GET "/resilience/:id" [id] (html-doc id) )
-  (GET "/resilience/" [] (html-doc nil) )
-  (GET "/resilience/img/:id" [id] (graph-viz id) )
-  (GET "/resilience/img/" [] (graph-viz nil) )
-  (GET "/resilience/node/:id" [id] (html-doc id) )
-  (GET "/resilience/map.map" [id] (do-map id) ))
+  (GET "/resilience/:id" [id] (html-doc id "weak") )
+  (GET "/resilience/" [] (html-doc nil "weak") )
+  (GET "/resilience/strength/:strength" [strength] (html-doc nil strength) )
+  (GET "/resilience/strength/:strength/img/:id" [id strength] (graph-viz id strength) )
+  (GET "/resilience/strength/:strength/img/" [strength] (graph-viz nil strength) )
+  (GET "/resilience/img/:id" [id] (graph-viz id "weak") )
+  (GET "/resilience/img/" [] (graph-viz nil "weak") )
+  (GET "/resilience/node/:id" [id] (html-doc id "weak") )
+  (GET "/resilience/strength/:strength/node/:id" [id strength] (html-doc id strength) )
+  (GET "/resilience/strength/:strength/node/" [strength] (html-doc nil strength) )
+  (GET "/resilience/map.map" [id] (do-map id "weak") ))
 
 (run-jetty webservice {:port 8000})
   
