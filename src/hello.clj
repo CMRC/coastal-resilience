@@ -39,7 +39,7 @@
   (let [url (encode-nodename nodename)
        fillcolour (if id 
 		      (if (= url (URLEncoder/encode id)) "blue" "gray81") "blue")]
-		      (.addln gv (str nodename " [shape=box,URL=\"/node/" url "\" color=" fillcolour ",style=filled];"))))
+		      (.addln gv (str nodename " [shape=box,URL=\"/resilience/node/" url "\" color=" fillcolour ",style=filled];"))))
 
 (defn do-graph
   [id]
@@ -75,18 +75,18 @@
   (html4
    (do-map id)
    [:div 
-   (str "<IMG SRC=\"/img/" id "\" border=\"0\" ismap usemap=\"#G\" />")]
+   (str "<IMG SRC=\"/resilience/img/" id "\" border=\"0\" ismap usemap=\"#G\" />")]
    )) 
 
   
   ;; define routes
 (defroutes webservice
-  (GET "/:id" [id] (html-doc id) )
-  (GET "/" [] (html-doc nil) )
-  (GET "/img/:id" [id] (graph-viz id) )
-  (GET "/img/" [] (graph-viz nil) )
-  (GET "/node/:id" [id] (html-doc id) )
-  (GET "/map.map" [id] (do-map id) ))
+  (GET "/resilience/:id" [id] (html-doc id) )
+  (GET "/resilience/" [] (html-doc nil) )
+  (GET "/resilience/img/:id" [id] (graph-viz id) )
+  (GET "/resilience/img/" [] (graph-viz nil) )
+  (GET "/resilience/node/:id" [id] (html-doc id) )
+  (GET "/resilience/map.map" [id] (do-map id) ))
 
 (run-jetty webservice {:port 8000})
   
