@@ -1,19 +1,18 @@
 (ns hello-world
-    (:use compojure.core, ring.adapter.jetty, incanter.core, incanter.stats, incanter.charts,
-	  incanter.io ,hiccup.core, hiccup.page-helpers)
-    (:require [compojure.route :as route] 
-	      [clojure.contrib.string :as str] 
-	      [clojure.contrib.math])
-    (:import (java.io ByteArrayOutputStream
-		      ByteArrayInputStream)
-	     GraphViz
-	     (java.net URLEncoder
-		       URLDecoder)))
+  (:use compojure.core, ring.adapter.jetty, hiccup.core, hiccup.page-helpers)
+  (:require [compojure.route :as route] 
+            [clojure.contrib.string :as str] 
+            [clojure.contrib.math :as math])
+  (:import (java.io ByteArrayOutputStream
+                    ByteArrayInputStream)
+           GraphViz
+           (java.net URLEncoder
+                     URLDecoder)))
 
 
 (defn encode-nodename
   [nodename]
-  (URLEncoder/encode (str/replace-re #"[/\":,]" "" nodename)))
+  (URLEncoder/encode (str/replace-re #"[^a-zA-Z0-9]" "" nodename)))
 
 (defn to-dot [line head id strength gv]
   (let [linevec (str/split #"\t" line)
@@ -28,12 +27,12 @@
 					      (encode-nodename id)))
 			      (if (> weight 0) "cornflowerblue" "red")
 			    "grey")]
-			    (if	(> (abs weight) min-weight) 
+			    (if	(> (math/abs weight) min-weight) 
 				(.addln gv 
 					(str nodename "->" 
 					     (nth head (+ index 1)) 
 					     "[headlabel =\"" (* weight 4) 
-					     "\",weight=" (* (abs weight) 4) 
+					     "\",weight=" (* (math/abs weight) 4) 
 					     ",color=" colour 
 					     "];")))))))
 
