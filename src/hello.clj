@@ -8,7 +8,10 @@
            GraphViz
            (java.net URLEncoder
                      URLDecoder)))
-
+(def lowlight "grey")
+(def highlight "cornflowerblue")
+(def positive "red")
+(def negative "cornflowerblue")
 
 (defn encode-nodename
   [nodename]
@@ -28,11 +31,11 @@
             min-weight (if (= strength "strong") 
                          0.6 
                          (if (= strength "medium") 0.3 0.0))
-            highlight (some #(or (= id "all")
+            highlighted (some #(or (= id "all")
                                   (= (encode-nodename %1) 
                                      (encode-nodename id))) comparee)
-            colour (if highlight (if (> weight 0) "cornflowerblue" "red")
-                       "grey")]
+            colour (if highlighted (if (> weight 0) positive negative)
+                       lowlight)]
         (if (> (math/abs weight) min-weight) 
           (.addln gv 
                   (str nodename "->" 
@@ -45,9 +48,9 @@
 (defn print-node
   [nodename id strength dir gv]
   (let [url (encode-nodename nodename)
-        fillcolour (if id 
-                     (if (= url (URLEncoder/encode id)) "cornflowerblue" "gray81") "cornflowerblue")]
-    (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/" strength "/node/" url "/dir/" dir "\" color=" fillcolour ",style=filled];"))))
+        fillcolour (if (not= "all" id) 
+                     (if (= url (URLEncoder/encode id)) highlight lowlight) highlight)]
+    (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/" strength "/node/" url "/dir/" dir "\",color=" fillcolour ",style=filled];"))))
 
 (defn do-graph
   [id strength dir]
@@ -93,19 +96,24 @@
      [:li (if (= strength "strong") 
 	    "strong"
             [:a {:href (str "/resilience/strength/strong/node/" id)} "strong"])]]]
-   [:div {:style "float: left;width: 200px"}
-    [:ul
-     [:li (if(= dir "in")
-            "in"
-            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/in")} "in"])]
-     [:li (if (= dir "out") 
-            "out"
-            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/out")} "out"])]
-     [:li (if (= dir "inout") 
-            "inout"
-            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/inout")} "inout"])]]]
+   (if (not= id "all")
+     [:div
+      [:div {:style "float: left;width: 200px"}
+       [:ul
+        [:li (if(= dir "in")
+               "in"
+               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/in")} "in"])]
+        [:li (if (= dir "out") 
+               "out"
+               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/out")} "out"])]
+        [:li (if (= dir "inout") 
+               "inout"
+               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/inout")} "inout"])]]]
+      [:div {:style "float: left;width: 200px"}
+       [:ul [:li [:a {:href (str "/resilience/strength/" strength)} "all"]]]]])
    [:div
-   (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "\" border=\"0\" ismap usemap=\"#G\" />")]
+    (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "\" border=\"0\" ismap usemap=\"#G\" />")]
+   #_(println (.getDotSource gv))
   )) 
 
 
@@ -122,7 +130,6 @@
   (GET "/resilience/node/:id" [id] (html-doc id "weak" "out") )
   (GET "/resilience/strength/:strength/node/:id" [id strength] (html-doc id strength "out") )
   (GET "/resilience/strength/:strength/node/:id/dir/:dir" [id strength dir] (html-doc id strength dir) )
-  (GET "/resilience/strength/:strength/node/" [strength] (html-doc "all" strength "out") )
-  (GET "/resilience/map.map" [id] (do-map id "weak" "out") ))
+  (GET "/resilience/strength/:strength/node/" [strength] (html-doc "all" strength "out") ))
 
 (run-jetty webservice {:port 8000})
