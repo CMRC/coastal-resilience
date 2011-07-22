@@ -20,15 +20,20 @@
         idv (map vector (iterate inc 0) (next linevec))]
     (doseq [[index value] idv]
       (let [weight (Float/parseFloat value)
-            to-compare (if (= dir "out") nodename (nth head (+ index 1)))
+            arrowhead (nth head (+ index 1))
+            comparees  (list nodename arrowhead)
+            comparee (if (= dir "in") (remove #{nodename} comparees)
+                         (if (= dir "out") (remove #{arrowhead} comparees)
+                             comparees))
             min-weight (if (= strength "strong") 
                          0.6 
                          (if (= strength "medium") 0.3 0.0))
-            colour (if (or (not id) (= (encode-nodename to-compare) 
-                                       (encode-nodename id)))
-                     (if (> weight 0) "cornflowerblue" "red")
-                     "grey")]
-        (if	(> (math/abs weight) min-weight) 
+            highlight (some #(or (= id "all")
+                                  (= (encode-nodename %1) 
+                                     (encode-nodename id))) comparee)
+            colour (if highlight (if (> weight 0) "cornflowerblue" "red")
+                       "grey")]
+        (if (> (math/abs weight) min-weight) 
           (.addln gv 
                   (str nodename "->" 
                        (nth head (+ index 1)) 
@@ -38,11 +43,11 @@
                        "];")))))))
 
 (defn print-node
-  [nodename id strength gv]
+  [nodename id strength dir gv]
   (let [url (encode-nodename nodename)
         fillcolour (if id 
                      (if (= url (URLEncoder/encode id)) "cornflowerblue" "gray81") "cornflowerblue")]
-    (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/" strength "/node/" url "\" color=" fillcolour ",style=filled];"))))
+    (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/" strength "/node/" url "/dir/" dir "\" color=" fillcolour ",style=filled];"))))
 
 (defn do-graph
   [id strength dir]
@@ -53,7 +58,7 @@
         [ls (line-seq br)
          head (str/split #"\t" (first ls))]
       (.addln gv (.start_graph gv))
-      (doseq [nodename (next head)] (print-node nodename id strength gv))
+      (doseq [nodename (next head)] (print-node nodename id strength dir gv))
       (doseq [line (next ls)] (to-dot line head id strength dir gv))
       (.addln gv (.end_graph gv)))))
 
@@ -95,18 +100,17 @@
 ;; define routes
 (defroutes webservice
   (GET "/resilience/:id" [id] (html-doc id "weak" "out") )
-  (GET "/resilience/" [] (html-doc nil "weak" "out") )
-  (GET "/resilience/strength/:strength" [strength] (html-doc nil strength "out") )
+  (GET "/resilience/" [] (html-doc "all" "weak" "out") )
+  (GET "/resilience/strength/:strength" [strength] (html-doc "all" strength "out") )
   (GET "/resilience/strength/:strength/img/:id" [id strength] (graph-viz id strength "out") )
   (GET "/resilience/strength/:strength/img/:id/dir/:dir" [id strength dir] (graph-viz id strength dir) )
-  (GET "/resilience/strength/:strength/img/" [strength] (graph-viz nil strength "out") )
+  (GET "/resilience/strength/:strength/img/" [strength] (graph-viz "all" strength "out") )
   (GET "/resilience/img/:id" [id] (graph-viz id "weak" "out") )
-  (GET "/resilience/img/" [] (graph-viz nil "weak" "out") )
+  (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") )
   (GET "/resilience/node/:id" [id] (html-doc id "weak" "out") )
   (GET "/resilience/strength/:strength/node/:id" [id strength] (html-doc id strength "out") )
   (GET "/resilience/strength/:strength/node/:id/dir/:dir" [id strength dir] (html-doc id strength dir) )
-  (GET "/resilience/strength/:strength/node/" [strength] (html-doc nil strength "out") )
+  (GET "/resilience/strength/:strength/node/" [strength] (html-doc "all" strength "out") )
   (GET "/resilience/map.map" [id] (do-map id "weak" "out") ))
 
 (run-jetty webservice {:port 8000})
-  
