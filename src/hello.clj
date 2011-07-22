@@ -82,7 +82,7 @@
   [id strength dir] 
   (html5
    (do-map id strength dir)
-   [:div
+   [:div {:style "float: left;width: 200px"}
     [:ul
      [:li (if (= strength "weak") 
 	    "weak"
@@ -92,9 +92,21 @@
             [:a {:href (str "/resilience/strength/medium/node/" id)} "medium"])]
      [:li (if (= strength "strong") 
 	    "strong"
-            [:a {:href (str "/resilience/strength/strong/node/" id)} "strong"])]]
-    (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "\" border=\"0\" ismap usemap=\"#G\" />")]
-   )) 
+            [:a {:href (str "/resilience/strength/strong/node/" id)} "strong"])]]]
+   [:div {:style "float: left;width: 200px"}
+    [:ul
+     [:li (if(= dir "in")
+            "in"
+            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/in")} "in"])]
+     [:li (if (= dir "out") 
+            "out"
+            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/out")} "out"])]
+     [:li (if (= dir "inout") 
+            "inout"
+            [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/inout")} "inout"])]]]
+   [:div
+   (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "\" border=\"0\" ismap usemap=\"#G\" />")]
+  )) 
 
 
 ;; define routes
