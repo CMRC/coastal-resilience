@@ -1,5 +1,6 @@
 (ns hello-world
-  (:use compojure.core, ring.adapter.jetty, hiccup.core, hiccup.page-helpers)
+  (:use compojure.core, ring.adapter.jetty, hiccup.core, hiccup.page-helpers,
+        hiccup.form-helpers)
   (:require [compojure.route :as route] 
             [clojure.contrib.string :as str] 
             [clojure.contrib.math :as math])
@@ -61,7 +62,7 @@
 (defn do-graph
   [id strength dir data-file]
   (def gv (GraphViz.))
-  (with-open [fr (if (str/substring? "http" data-file)
+  (with-open [fr (if (re-find #"^http:" data-file)
                    (java.io.InputStreamReader. (.openStream (URL. data-file)))
                    (java.io.FileReader. (str "data/" (URLDecoder/decode data-file))))
               br (java.io.BufferedReader. fr)]
@@ -93,6 +94,9 @@
   [id strength dir data-file] 
   (html5
    (do-map id strength dir data-file)
+   [:div {:style "float: left;width: 400px"}
+    (form-to [:get "/resilience/new"] (text-field "URL" data-file)
+             (submit-button "Submit"))]
    [:div {:style "float: left;width: 200px"}
     [:ul
      [:li (if (= strength "weak") 
@@ -121,11 +125,9 @@
        [:ul [:li [:a {:href (str "/resilience/strength/" strength "/node/all/dir/inout/data/" data-file)} "all"]]]]])
    [:div {:style "clear: both"}
     (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")]
-   #_(println (.getDotSource gv))
-  )) 
+   #_(println (.getDotSource gv))))
 
-
-;; define routes
+  ;; define routes
 (defroutes webservice
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/data/:data-file" :data-file #".*$"] [id strength dir data-file] (html-doc id strength dir data-file) )
   (GET "/resilience/strength/:strength/node/:id/dir/:dir" [id strength dir] (html-doc id strength dir default-data-file) )
@@ -133,7 +135,7 @@
   (GET "/resilience/strength/:strength/node/" [strength] (html-doc "all" strength "out" default-data-file) )
   (GET "/resilience/strength/:strength" [strength] (html-doc "all" strength "out" default-data-file) )
   (GET "/resilience/node/:id" [id] (html-doc id "weak" "out" default-data-file) )
-  (GET "/resilience/:id" [id] (html-doc id "weak" "out" default-data-file) )
+  (GET "/resilience/" [] (html-doc "all" "weak" "out" default-data-file) )
   (GET ["/resilience/data/:data-file" :data-file #".*$"] [data-file] (html-doc "all" "weak" "out" data-file) )
   (GET "/resilience/" [] (html-doc "all" "weak" "out" default-data-file) )
   ;;probably don't need half of these
@@ -142,6 +144,7 @@
   (GET "/resilience/strength/:strength/img/:id" [id strength] (graph-viz id strength "out" default-data-file) )
   (GET "/resilience/strength/:strength/img/" [strength] (graph-viz "all" strength "out" default-data-file) )
   (GET "/resilience/img/:id" [id] (graph-viz id "weak" "out") )
-  (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") ))
+  (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") )
+  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL"))) )
 
 (run-jetty webservice {:port 8000})
