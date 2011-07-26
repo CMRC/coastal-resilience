@@ -7,7 +7,8 @@
                     ByteArrayInputStream)
            GraphViz
            (java.net URLEncoder
-                     URLDecoder)))
+                     URLDecoder
+                     URL)))
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
@@ -60,7 +61,9 @@
 (defn do-graph
   [id strength dir data-file]
   (def gv (GraphViz.))
-  (with-open [fr (java.io.FileReader. (str "data/" (URLDecoder/decode data-file)))
+  (with-open [fr (if (str/substring? "http" data-file)
+                   (java.io.InputStreamReader. (.openStream (URL. data-file)))
+                   (java.io.FileReader. (str "data/" (URLDecoder/decode data-file))))
               br (java.io.BufferedReader. fr)]
     (let 	     	
         [ls (line-seq br)
