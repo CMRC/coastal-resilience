@@ -1,0 +1,11 @@
+Restocking,M+,Stocks of Valuable Fish,85,48,215,49,370,52
+Stocks of Valuable Fish,H+,Stocks of Valuable Fish,370,52,489,53,608,55
+Roach Fish,M-,Stocks of Valuable Fish,627,153,525,111,370,52
+Roach Fish,H+,Roach Fish,627,153,627,196,628,239
+Manipulative Fishing,H+,Manipulative Fishing,385,207,417,294,449,382
+Manipulative Fishing,M-,Roach Fish,385,207,506,180,627,153
+Algae Blooms,M+,Restocking,122,275,195,164,85,48
+Algae Blooms,M-,Manipulative Fishing,122,275,253,241,385,207
+Water Level,H-,Excessive Vegetation,327,318,271,384,154,453
+Excessive Vegetation,H+,Excessive Vegetation,154,453,288,450,424,450
+Water Level,H+,Water Level,327,318,244,319,155,322

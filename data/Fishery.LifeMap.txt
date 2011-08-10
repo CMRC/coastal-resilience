@@ -1,0 +1,24 @@
+Wild Pike Population,M+,Harvestable Stock Size,351,51,476,50,651,53
+Harvestable Stock Size,H+,Fishing Pressure,651,53,607,89,87,298
+Fishing Pressure,H-,Harvestable Stock Size,87,298,180,251,651,53
+Stocked Pike Juveniles,M+,Stocked Pike Recruits,1170,51,1118,92,778,326
+Stocked Pike Recruits,H+,Stocked Pike Population,778,326,811,284,966,52
+Stocked Pike Population,H+,Harvestable Stock Size,966,52,839,55,651,53
+Stocked Pike Recruits,M+,Competition,778,326,770,378,704,510
+Competition,M-,Spawn Rate,704,510,619,512,396,512
+Spawn Rate,H+,Wild Pike Juveniles,396,512,336,473,267,364
+Wild Pike Juveniles,M+,Wild Recruits,267,364,352,328,513,260
+Wild Recruits,H+,Spawn Rate,513,260,487,315,396,512
+Wild Recruits,M+,Competition,513,260,541,312,704,510
+Wild Recruits,H+,Wild Pike Population,513,260,474,214,351,51
+Spawn Rate,L+,Stocked Pike Population,396,512,451,456,966,52
+Stocked Pike Recruits,H+,Spawn Rate,778,326,667,361,396,512
+Stocked Pike Juveniles,L-,Macro-Invertebrates,1170,51,1175,105,1189,342
+Macro-Invertebrates,M+,Stocked Pike Juveniles,1189,342,1253,286,1170,51
+Macro-Invertebrates,L-,Submerged Macrophytes,1189,342,1074,313,111,57
+Submerged Macrophytes,M+,Macro-Invertebrates,111,57,223,88,1189,342
+Favorable Temperature,L+,Fishing Pressure,102,514,98,458,87,298
+Favorable Temperature,L+,Reed Cover,102,514,535,582,1002,513
+Reed Cover,M+,Stocked Pike Juveniles,1002,513,1010,464,1170,51
+Reed Cover,M+,Wild Pike Juveniles,1002,513,903,491,267,364
+Favorable Temperature,M+,Spawn Rate,102,514,217,512,396,512
