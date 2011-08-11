@@ -16,6 +16,7 @@
 (def negative "cornflowerblue")
 (def default-data-file "Mike%20-%20FCM%20Cork%20Harbour.csv")
 (def default-format "matrix")
+(def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
 
 
 (defn encode-nodename
@@ -54,7 +55,7 @@
 (defn dot-from-lifemap [line head id strength dir gv]
   (let [linevec (str/split #"," line)
         nodename (first linevec)
-        weight (Float/parseFloat (if (= (nth linevec 1) "M+") "0.5" "0.25"))
+        weight ((keyword (nth linevec 1)) strengths)
         arrowhead (nth linevec 2)
         comparees  (list nodename arrowhead)
         comparee (if (= dir "in") (remove #{nodename} comparees)
@@ -101,7 +102,7 @@
         #_(doseq [nodename (next head)] (print-node nodename id strength dir data-file gv))
         (doseq [line ls] (dot-from-lifemap line ["head"] id strength dir gv))
         (.addln gv (.end_graph gv))
-        (println (.getDotSource gv)))
+        #_(println (.getDotSource gv)))
       (let 	     	
           [ls (line-seq br)
            head (str/split #"\t" (first ls))]
@@ -135,35 +136,27 @@
              (submit-button "Submit"))]
    [:div {:style "float: left;width: 200px"}
     [:ul
-     [:li (if (= strength "weak") 
-	    "weak"
-            [:a {:href (str "/resilience/strength/weak/node/" id "/dir/" dir "/data/" data-file)} "weak"])]
-     [:li (if (= strength "medium") 
-	    "medium"
-            [:a {:href (str "/resilience/strength/medium/node/" id "/dir/" dir "/data/" data-file)} "medium"])]
-     [:li (if (= strength "strong") 
-	    "strong"
-            [:a {:href (str "/resilience/strength/strong/node/" id "/dir/" dir "/data/" data-file)} "strong"])]]]
+     (doall (map #(html5 [:li (if (= strength %)
+                                %
+                                [:a {:href (str "/resilience/strength/" % "/node/" id "/dir/" dir "/format/" format "/data/" data-file)} %])])
+                 ["weak" "medium" "strong"]))]]
    (if (not= id "all")
      [:div
       [:div {:style "float: left;width: 200px"}
        [:ul
-        [:li (if(= dir "in")
-               "in"
-               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/in/data/" data-file)} "in"])]
-        [:li (if (= dir "out") 
-               "out"
-               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/out/data/" data-file)} "out"])]
-        [:li (if (= dir "inout") 
-               "inout"
-               [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/inout/data/" data-file)} "inout"])]]]
+        (doall
+         (map
+          #(html5 [:li
+                   (if(= dir %)
+                     %
+                     [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/" % "/format/" format "/data/" data-file)} %])])
+          ["in" "out" "inout"]))]]
       [:div {:style "float: left;width: 200px"}
-       [:ul [:li [:a {:href (str "/resilience/strength/" strength "/node/all/dir/inout/data/" data-file)} "all"]]]]])
+       [:ul [:li [:a {:href (str "/resilience/strength/" strength "/node/all/dir/inout/format/" format "/data/" data-file)} "all"]]]]])
    [:div {:style "clear: both"}
-    (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")]
-   #_(println (.getDotSource gv))))
+    (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")]))
 
-  ;; define routes
+;; define routes
 (defroutes webservice
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir data-file format] (html-doc id strength dir data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/data/:data-file" :data-file #".*$"] [id strength dir data-file] (html-doc id strength dir data-file default-format) )
