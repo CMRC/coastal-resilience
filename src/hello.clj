@@ -23,6 +23,12 @@
   [nodename]
   (URLEncoder/encode (str/replace-re #"[^a-zA-Z0-9]" "" nodename)))
 
+(defn node-string
+  [nodename strength url dir format data-file fillcolour]
+   (str nodename " [shape=box,URL=\"/resilience/strength/"
+        strength "/node/" url "/dir/" dir "/format/" format "/data/" data-file "\",color="
+        fillcolour ",style=filled];"))
+   
 (defn to-dot [line head id strength dir gv]
   (let [linevec (str/split #"\t" line)
         nodename (first linevec)
@@ -40,7 +46,7 @@
             highlighted (some #(or (= id "all")
                                   (= (encode-nodename %1) 
                                      (encode-nodename id))) comparee)
-            weight-factor 40
+            weight-factor 10
             colour (if highlighted (if (> weight 0) positive negative)
                        lowlight)]
         (if (> (math/abs weight) min-weight) 
@@ -52,11 +58,16 @@
                        ",color=" colour 
                        "];")))))))
 
-(defn dot-from-lifemap [line head id strength dir gv]
+(defn dot-from-lifemap [line id strength dir data-file format gv]
   (let [linevec (str/split #"," line)
         nodename (first linevec)
-        weight ((keyword (nth linevec 1)) strengths)
+        url (encode-nodename nodename)
         arrowhead (nth linevec 2)
+        fillcolour (if (not= "all" id) 
+                     (if (= url (URLEncoder/encode id)) highlight lowlight) highlight)
+        arrowhead-fillcolour (if (not= "all" id) 
+                     (if (= (encode-nodename arrowhead) (URLEncoder/encode id)) highlight lowlight) highlight)
+        weight ((keyword (nth linevec 1)) strengths)
         comparees  (list nodename arrowhead)
         comparee (if (= dir "in") (remove #{nodename} comparees)
                      (if (= dir "out") (remove #{arrowhead} comparees)
@@ -67,7 +78,7 @@
         highlighted (some #(or (= id "all")
                                (= (encode-nodename %1) 
                                   (encode-nodename id))) comparee)
-        weight-factor 1
+        weight-factor 10
         colour (if highlighted (if (> weight 0) positive negative)
                    lowlight)
         dot-string (str "\"" nodename "\" -> " 
@@ -75,18 +86,20 @@
                         " [headlabel =\"" (* weight 4) 
                         "\",weight=" (* (math/abs weight) weight-factor) 
                         ",color=" colour 
-                        "];")]
+                        "];")
+        nodename-string (node-string (str "\"" nodename "\"") strength url dir format data-file fillcolour)
+        arrowhead-string (node-string (str "\"" arrowhead "\"") strength (encode-nodename arrowhead) dir format data-file arrowhead-fillcolour)]
+    (.addln gv arrowhead-string)
+    (.addln gv nodename-string) 
     (if (> (math/abs weight) min-weight) 
       (.addln gv dot-string))))
 
 (defn print-node
-  [nodename id strength dir data-file gv]
+  [nodename id strength dir data-file format gv]
   (let [url (encode-nodename nodename)
         fillcolour (if (not= "all" id) 
                      (if (= url (URLEncoder/encode id)) highlight lowlight) highlight)]
-    (.addln gv (str nodename " [shape=box,URL=\"/resilience/strength/"
-                    strength "/node/" url "/dir/" dir "/data/" data-file "\",color="
-                    fillcolour ",style=filled];"))))
+    (.addln gv (node-string nodename strength url dir format data-file fillcolour ))))
 
 (defn do-graph
   [id strength dir data-file format]
@@ -99,15 +112,14 @@
       (let 	     	
           [ls (line-seq br)]
         (.addln gv (.start_graph gv))
-        #_(doseq [nodename (next head)] (print-node nodename id strength dir data-file gv))
-        (doseq [line ls] (dot-from-lifemap line ["head"] id strength dir gv))
+        (doseq [line ls] (dot-from-lifemap line id strength dir data-file format gv))
         (.addln gv (.end_graph gv))
         #_(println (.getDotSource gv)))
       (let 	     	
           [ls (line-seq br)
            head (str/split #"\t" (first ls))]
         (.addln gv (.start_graph gv))
-        (doseq [nodename (next head)] (print-node nodename id strength dir data-file gv))
+        (doseq [nodename (next head)] (print-node nodename id strength dir data-file format gv))
         (doseq [line (next ls)] (to-dot line head id strength dir gv))
         (.addln gv (.end_graph gv))))))
 
@@ -132,7 +144,9 @@
   (html5
    (do-map id strength dir data-file format)
    [:div {:style "float: left;width: 400px"}
-    (form-to [:get "/resilience/new"] (text-field "URL" data-file)
+    (form-to [:get "/resilience/new"]
+             (text-field "URL" data-file)
+             (text-field "Format" format)
              (submit-button "Submit"))]
    [:div {:style "float: left;width: 200px"}
     [:ul
@@ -176,6 +190,6 @@
   (GET "/resilience/strength/:strength/img/" [strength] (graph-viz "all" strength "out" default-data-file default-format) )
   (GET "/resilience/img/:id" [id] (graph-viz id "weak" "out") )
   (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") )
-  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") default-format)) )
+  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") (params "Format"))) )
 
 (run-jetty webservice {:port 8000})
