@@ -180,11 +180,16 @@
 (defn edit-links [params]
   (def gv (GraphViz.))
   (.addln gv (.start_graph gv))
-  (dorun (map #(.addln gv (str % "[URL=\"/resilience/edit/" % "\""
-                               (when (= % (params "node")) ",color=blue,style=filled")
+  (dorun (map #(.addln gv (str % "[URL=\"/resilience/edit/"
+                               (when-let [node (params "node")]
+                                 (str node "/"))
+                               % "\""
+                               (if (= % (params "node")) ",color=blue,style=filled"
+                                   )
                                "];"))
               nodes))
   (dorun (map #(.addln gv %) links))
+  (when-let [head (params "head")] (.addln gv (str (params "node") "->" head)))
   (.addln gv (.end_graph gv))
   (cond
    (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
@@ -201,9 +206,11 @@
                                   :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))
 
 (defn edit-links-html [params]
-  (str (:body (edit-links {"format" "cmapx"}))
+  (str (:body (edit-links (conj params {"format" "cmapx" })))
        (if-let [node (params "node")]
-         (str "<img src=\"/resilience/img/edit/" node "\" ismap usemap=\"#G\" />")
+         (str "<img src=\"/resilience/img/edit/" node
+              (when-let [head (params "head")] (str "/" head))
+              "\" ismap usemap=\"#G\" />")
          "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")))
 
 ;; define routes
@@ -211,8 +218,10 @@
   ;;links for editing
   (GET "/resilience/:format/edit" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:node" {params :params} (edit-links params))
+  (GET "/resilience/:format/edit/:node/:head" {params :params} (edit-links params))
   (GET "/resilience/edit" {params :params} (edit-links-html params))
   (GET "/resilience/edit/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/edit/:node/:head" {params :params} (edit-links-html params))
   
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir data-file format) )
