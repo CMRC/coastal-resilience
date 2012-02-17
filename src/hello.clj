@@ -218,7 +218,8 @@
          (alter links conj @links {:head (params "node")
                                    :tail (params "tail")
                                    :weight (params "weight")}))
-        (edit-links-html {"mode" "edit"}))
+        {:status 303
+         :headers {"Location" "/resilience/mode/edit"}})
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
            [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
                            (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
