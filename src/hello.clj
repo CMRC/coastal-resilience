@@ -189,7 +189,8 @@
                                "];"))
               nodes))
   (dorun (map #(.addln gv %) links))
-  (when-let [tail (params "tail")] (.addln gv (str tail "->" (params "node"))))
+  (when-let [tail (params "tail")] (.addln gv (str tail "->" (params "node")
+                                                   "[label=\"1\".URL=\"/resilience/edit\"]")))
   (.addln gv (.end_graph gv))
   (cond
    (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
