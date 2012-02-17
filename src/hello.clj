@@ -174,8 +174,8 @@
       [:div {:style "clear: both"}
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
-(def nodes ["A" "B" "C" "D"])
-(def links [])
+(def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
+(def links ["Agriculture -> Coastal_Squeeze" "Coastal_Squeeze -> Wetlands"])
 
 (defn edit-links [params]
   (def gv (GraphViz.))
@@ -195,7 +195,7 @@
                       "[label=\"" weight "\",URL=\"/resilience/edit/"
                       tail "/"
                       (params "node")
-                      "/" weight "\"]"))))
+                      "/" weight "\",weight=0,color=blue,style=dashed]"))))
   (.addln gv (.end_graph gv))
   (cond
    (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
