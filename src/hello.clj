@@ -179,38 +179,38 @@
                  {:tail "Coastal_Squeeze" :head "Wetlands" :weight 2}]))
 
 (defn edit-links [params]
-  (def gv (GraphViz.))
-  (.addln gv (.start_graph gv))
-  (dorun (map #(.addln gv (str % "[URL=\"/resilience/mode/edit/"
-                               (when-let [node (params "node")]
-                                 (str node "/"))
-                               % "\""
-                               (if (= % (params "node")) ",color=blue,style=filled"
-                                   )
-                               "];"))
-              nodes))
-  (dorun (map #(.addln gv (str (:tail %) "->" (:head %) ";")) @links))
-  (when-let [tail (params "tail")]
-    (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")]
+  (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")
+        gv (GraphViz.)]
+    (.addln gv (.start_graph gv))
+    (dorun (map #(.addln gv (str % "[URL=\"/resilience/mode/edit/"
+                                 (when-let [node (params "node")]
+                                   (str node "/"))
+                                 % "\""
+                                 (if (= % (params "node")) ",color=blue,style=filled"
+                                     )
+                                 "];"))
+                nodes))
+    (dorun (map #(.addln gv (str (:tail %) "->" (:head %) "[label=\"" weight "\"];")) @links))
+    (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
                       "[label=\"" weight "\",URL=\"/resilience/mode/edit/"
                       tail "/"
                       (params "node")
-                      "/" weight "\",weight=0,color=blue,style=dashed]"))))
-  (.addln gv (.end_graph gv))
-  (cond
-   (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
-                                     in-stream (do
-                                                 (ByteArrayInputStream. graph))]
-                                 {:status 200	 
-                                  :headers {"Content-Type" "image/gif"}
-                                  :body in-stream})
-   (= (params "format") "dot") {:status 200	 
-                                :headers {"Content-Type" "txt"}
-                                :body(.getDotSource gv)}
-   (= (params "format") "cmapx") {:status 200	 
+                      "/" weight "\",weight=0,color=blue,style=dashed]")))
+    (.addln gv (.end_graph gv))
+    (cond
+     (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
+                                       in-stream (do
+                                                   (ByteArrayInputStream. graph))]
+                                   {:status 200	 
+                                    :headers {"Content-Type" "image/gif"}
+                                    :body in-stream})
+     (= (params "format") "dot") {:status 200	 
                                   :headers {"Content-Type" "txt"}
-                                  :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))
+                                  :body(.getDotSource gv)}
+     (= (params "format") "cmapx") {:status 200	 
+                                    :headers {"Content-Type" "txt"}
+                                    :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))})))
 
 (defn edit-links-html [params]
   (if (= (params "mode") "save")
