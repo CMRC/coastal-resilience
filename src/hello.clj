@@ -189,8 +189,13 @@
                                "];"))
               nodes))
   (dorun (map #(.addln gv %) links))
-  (when-let [tail (params "tail")] (.addln gv (str tail "->" (params "node")
-                                                   "[label=\"1\".URL=\"/resilience/edit\"]")))
+  (when-let [tail (params "tail")]
+    (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")]
+      (.addln gv (str tail "->" (params "node")
+                      "[label=\"" weight "\",URL=\"/resilience/edit/"
+                      tail "/"
+                      (params "node")
+                      "/" weight "\"]"))))
   (.addln gv (.end_graph gv))
   (cond
    (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
@@ -212,6 +217,7 @@
          (str "<img src=\"/resilience/img/edit/"
               (when-let [tail (params "tail")] (str tail "/"))
               node
+              (when-let [weight (params "weight")] (str "/" weight))
               "\" ismap usemap=\"#G\" />")
          "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")))
 
@@ -221,9 +227,11 @@
   (GET "/resilience/:format/edit" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:node" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:tail/:node" {params :params} (edit-links params))
+  (GET "/resilience/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
   (GET "/resilience/edit" {params :params} (edit-links-html params))
   (GET "/resilience/edit/:node" {params :params} (edit-links-html params))
   (GET "/resilience/edit/:tail/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/edit/:tail/:node/:weight" {params :params} (edit-links-html params))
   
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir data-file format) )
