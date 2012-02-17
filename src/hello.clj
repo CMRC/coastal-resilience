@@ -175,12 +175,13 @@
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
 (def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
-(def links ["Agriculture -> Coastal_Squeeze" "Coastal_Squeeze -> Wetlands"])
+(def links (ref [{:tail "Agriculture" :head "Coastal_Squeeze" :weight 1}
+                 {:tail "Coastal_Squeeze" :head "Wetlands" :weight 2}]))
 
 (defn edit-links [params]
   (def gv (GraphViz.))
   (.addln gv (.start_graph gv))
-  (dorun (map #(.addln gv (str % "[URL=\"/resilience/edit/"
+  (dorun (map #(.addln gv (str % "[URL=\"/resilience/mode/edit/"
                                (when-let [node (params "node")]
                                  (str node "/"))
                                % "\""
@@ -188,11 +189,11 @@
                                    )
                                "];"))
               nodes))
-  (dorun (map #(.addln gv %) links))
+  (dorun (map #(.addln gv (str (:tail %) "->" (:head %) ";")) @links))
   (when-let [tail (params "tail")]
     (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")]
       (.addln gv (str tail "->" (params "node")
-                      "[label=\"" weight "\",URL=\"/resilience/edit/"
+                      "[label=\"" weight "\",URL=\"/resilience/mode/edit/"
                       tail "/"
                       (params "node")
                       "/" weight "\",weight=0,color=blue,style=dashed]"))))
@@ -212,7 +213,15 @@
                                   :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))
 
 (defn edit-links-html [params]
-  (str (:body (edit-links (conj params {"format" "cmapx" })))
+  (when (= (params "mode") "save")
+    (dosync
+     (alter links conj @links {:head (params "node")
+                               :tail (params "tail")
+                               :weight (params "weight")}))
+    (println @links))
+  (html5 (:body (edit-links (conj params {"format" "cmapx" })))
+       [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
+                       (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
        (if-let [node (params "node")]
          (str "<img src=\"/resilience/img/edit/"
               (when-let [tail (params "tail")] (str tail "/"))
@@ -228,10 +237,10 @@
   (GET "/resilience/:format/edit/:node" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:tail/:node" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
-  (GET "/resilience/edit" {params :params} (edit-links-html params))
-  (GET "/resilience/edit/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/edit/:tail/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/edit/:tail/:node/:weight" {params :params} (edit-links-html params))
+  (GET "/resilience/mode/:mode" {params :params} (edit-links-html params))
+  (GET "/resilience/mode/:mode/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
   
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir data-file format) )
