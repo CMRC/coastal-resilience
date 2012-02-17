@@ -213,22 +213,22 @@
                                   :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))
 
 (defn edit-links-html [params]
-  (when (= (params "mode") "save")
-    (dosync
-     (alter links conj @links {:head (params "node")
-                               :tail (params "tail")
-                               :weight (params "weight")}))
-    (println @links))
-  (html5 (:body (edit-links (conj params {"format" "cmapx" })))
-       [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
-                       (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
-       (if-let [node (params "node")]
-         (str "<img src=\"/resilience/img/edit/"
-              (when-let [tail (params "tail")] (str tail "/"))
-              node
-              (when-let [weight (params "weight")] (str "/" weight))
-              "\" ismap usemap=\"#G\" />")
-         "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")))
+  (if (= (params "mode") "save")
+    (do (dosync
+         (alter links conj @links {:head (params "node")
+                                   :tail (params "tail")
+                                   :weight (params "weight")}))
+        (edit-links-html {"mode" "edit"}))
+    (html5 (:body (edit-links (conj params {"format" "cmapx" })))
+           [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
+                           (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
+           (if-let [node (params "node")]
+             (str "<img src=\"/resilience/img/edit/"
+                  (when-let [tail (params "tail")] (str tail "/"))
+                  node
+                  (when-let [weight (params "weight")] (str "/" weight))
+                  "\" ismap usemap=\"#G\" />")
+             "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />"))))
 
 ;; define routes
 (defroutes webservice
@@ -241,6 +241,7 @@
   (GET "/resilience/mode/:mode/:node" {params :params} (edit-links-html params))
   (GET "/resilience/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
   (GET "/resilience/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
+  (GET "/resilience/test" {params :params} (edit-links-html {"mode" "edit"}))
   
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir data-file format) )
