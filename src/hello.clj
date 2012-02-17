@@ -130,49 +130,92 @@
     (String. graph)))
 
 (defn graph-viz
-  [id strength dir data-file format]
-  (do-graph id strength dir data-file format)
-  (let [graph (.getGraph gv (.getDotSource gv) "gif")
-        in-stream (do
-                    (ByteArrayInputStream. graph))]
-    {:status 200	 
-     :headers {"Content-Type" "image/gif"}
-     :body in-stream}))
+  ([id strength dir data-file format]
+     (graph-viz id strength dir "no" data-file format))
+  ([id strength dir link data-file format]
+     (do-graph id strength dir data-file format)
+     (let [graph (.getGraph gv (.getDotSource gv) "gif")
+           in-stream (do
+                       (ByteArrayInputStream. graph))]
+       {:status 200	 
+        :headers {"Content-Type" "image/gif"}
+        :body in-stream})))
 
 (defn html-doc 
-  [id strength dir data-file format] 
-  (html5
-   (do-map id strength dir data-file format)
-   [:div {:style "float: left;width: 400px"}
-    (form-to [:get "/resilience/new"]
-             (text-field "URL" data-file)
-             (text-field "Format" format)
-             (submit-button "Submit"))]
-   [:div {:style "float: left;width: 200px"}
-    [:ul
-     (doall (map #(html5 [:li (if (= strength %)
-                                %
-                                [:a {:href (str "/resilience/strength/" % "/node/" id "/dir/" dir "/format/" format "/data/" data-file)} %])])
-                 ["weak" "medium" "strong"]))]]
-   (if (not= id "all")
-     [:div
+  ([id strength dir data-file format]
+     (html-doc id strength dir "no" data-file format))
+  ([id strength dir link data-file format]
+     (html5
+      (do-map id strength dir data-file format)
+      [:div {:style "float: left;width: 400px"}
+       (form-to [:get "/resilience/new"]
+                (text-field "URL" data-file)
+                (text-field "Format" format)
+                (submit-button "Submit"))]
       [:div {:style "float: left;width: 200px"}
        [:ul
-        (doall
-         (map
-          #(html5 [:li
-                   (if(= dir %)
-                     %
-                     [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/" % "/format/" format "/data/" data-file)} %])])
-          ["in" "out" "inout"]))]]
-      [:div {:style "float: left;width: 200px"}
-       [:ul [:li [:a {:href (str "/resilience/strength/" strength "/node/all/dir/inout/format/" format "/data/" data-file)} "all"]]]]])
-   [:div {:style "clear: both"}
-    (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")]))
+        (doall (map #(html5 [:li (if (= strength %)
+                                   %
+                                   [:a {:href (str "/resilience/strength/" % "/node/" id "/dir/" dir "/format/" format "/data/" data-file)} %])])
+                    ["weak" "medium" "strong"]))]]
+      (if (not= id "all")
+        [:div
+         [:div {:style "float: left;width: 200px"}
+          [:ul
+           (doall
+            (map
+             #(html5 [:li
+                      (if(= dir %)
+                        %
+                        [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/" % "/format/" format "/data/" data-file)} %])])
+             ["in" "out" "inout"]))]]
+         [:div {:style "float: left;width: 200px"}
+          [:ul [:li [:a {:href (str "/resilience/strength/" strength "/node/all/dir/inout/format/" format "/data/" data-file)} "all"]]]]])
+      [:div {:style "clear: both"}
+       (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
+
+(def nodes ["A" "B" "C"])
+(def links ["A->B;" "B;" "C->C;"])
+
+(defn edit-links [params]
+  (def gv (GraphViz.))
+  (.addln gv (.start_graph gv))
+  (dorun (map #(.addln gv (str % "[URL=\"/resilience/edit/" % "\""
+                               (when (= % (params "node")) ",color=blue,style=filled")
+                               "];"))
+              nodes))
+  (dorun (map #(.addln gv %) links))
+  (.addln gv (.end_graph gv))
+  (cond
+   (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
+                                     in-stream (do
+                                                 (ByteArrayInputStream. graph))]
+                                 {:status 200	 
+                                  :headers {"Content-Type" "image/gif"}
+                                  :body in-stream})
+   (= (params "format") "dot") {:status 200	 
+                                :headers {"Content-Type" "txt"}
+                                :body(.getDotSource gv)}
+   (= (params "format") "cmapx") {:status 200	 
+                                  :headers {"Content-Type" "txt"}
+                                  :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))
+
+(defn edit-links-html [params]
+  (str (:body (edit-links {"format" "cmapx"}))
+       (if-let [node (params "node")]
+         (str "<img src=\"/resilience/img/edit/" node "\" ismap usemap=\"#G\" />")
+         "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")))
 
 ;; define routes
 (defroutes webservice
-  (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir data-file format] (html-doc id strength dir data-file format) )
+  ;;links for editing
+  (GET "/resilience/:format/edit" {params :params} (edit-links params))
+  (GET "/resilience/:format/edit/:node" {params :params} (edit-links params))
+  (GET "/resilience/edit" {params :params} (edit-links-html params))
+  (GET "/resilience/edit/:node" {params :params} (edit-links-html params))
+  
+  (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
+  (GET ["/resilience/strength/:strength/node/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir data-file format) )
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/data/:data-file" :data-file #".*$"] [id strength dir data-file] (html-doc id strength dir data-file default-format) )
   (GET "/resilience/strength/:strength/node/:id/dir/:dir" [id strength dir] (html-doc id strength dir default-data-file default-format) )
   (GET "/resilience/strength/:strength/node/:id" [id strength] (html-doc id strength "out" default-data-file default-format) )
@@ -184,12 +227,15 @@
   (GET "/resilience/" [] (html-doc "all" "weak" "out" default-data-file default-format) )
   ;;probably don't need half of these
   (GET ["/resilience/strength/:strength/img/:id/dir/:dir/format/:format/data/:data-file" :data-file #".*$"] [id strength dir data-file format] (graph-viz id strength dir data-file format) )
-  (GET ["/resilience/strength/:strength/img/:id/dir/:dir/data/:data-file" :data-file #".*$"] [id strength dir data-file] (graph-viz id strength dir data-file default-format) )
+  (GET ["/resilience/strength/:strength/img/:id/dir/:dir/data/:data-file" :data-file #".*$"] [id strength dir link data-file] (graph-viz id strength dir link data-file default-format) )
+  (GET ["/resilience/strength/:strength/img/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (graph-viz id strength dir link data-file format) )
+  (GET ["/resilience/strength/:strength/img/:id/dir/:dir/new/:linkdata/:data-file" :data-file #".*$"] [id strength dir data-file] (graph-viz id strength dir data-file default-format) )
   (GET "/resilience/strength/:strength/img/:id/dir/:dir" [id strength dir] (graph-viz id strength dir default-data-file default-format) )
   (GET "/resilience/strength/:strength/img/:id" [id strength] (graph-viz id strength "out" default-data-file default-format) )
   (GET "/resilience/strength/:strength/img/" [strength] (graph-viz "all" strength "out" default-data-file default-format) )
   (GET "/resilience/img/:id" [id] (graph-viz id "weak" "out") )
   (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") )
-  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") (params "Format"))) )
+  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") (params "Format"))))
+
 
 (run-jetty webservice {:port 8000})
