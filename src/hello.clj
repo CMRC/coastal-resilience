@@ -175,8 +175,8 @@
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
 (def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
-(def links (ref [{:tail "Agriculture" :head "Coastal_Squeeze" :weight 1}
-                 {:tail "Coastal_Squeeze" :head "Wetlands" :weight 2}]))
+(def links (ref {"Coastal_Squeeze" {:tail "Agriculture" :head "Coastal_Squeeze" :weight 1}
+                 "Wetlands" {:tail "Coastal_Squeeze" :head "Wetlands" :weight 2}}))
 
 (defn edit-links [params]
   (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")
@@ -190,7 +190,7 @@
                                      )
                                  "];"))
                 nodes))
-    (dorun (map #(.addln gv (str (:tail %) "->" (:head %) "[label=\"" weight "\"];")) @links))
+    (dorun (map #(.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\"" weight "\"];")) @links))
     (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
                       "[label=\"" weight "\",URL=\"/resilience/mode/edit/"
@@ -205,24 +205,38 @@
                                    {:status 200	 
                                     :headers {"Content-Type" "image/gif"}
                                     :body in-stream})
-     (= (params "format") "dot") {:status 200	 
-                                  :headers {"Content-Type" "txt"}
-                                  :body(.getDotSource gv)}
+     (= (params "format") "dot")   {:status 200	 
+                                    :headers {"Content-Type" "txt"}
+                                    :body(.getDotSource gv)}
      (= (params "format") "cmapx") {:status 200	 
                                     :headers {"Content-Type" "txt"}
                                     :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))})))
 
 (defn edit-links-html [params]
-  (if (= (params "mode") "save")
-    (do (dosync
-         (alter links conj @links {:head (params "node")
-                                   :tail (params "tail")
-                                   :weight (params "weight")}))
-        {:status 303
-         :headers {"Location" "/resilience/mode/edit"}})
+  (case (params "mode")
+    "save"     (do (dosync
+                    (alter links conj @links [(params "node")
+                                              {:head (params "node")
+                                               :tail (params "tail")
+                                               :weight (params "weight")}]))
+                   {:status 303
+                    :headers {"Location" "/resilience/mode/edit"}})
+    "download" {:status 200
+                :headers {"Content-Type" "text/csv"
+                          "Content-Disposition" "attachment;filename=matrix.csv"}
+                :body (str "," (apply str (map #(str % \,) nodes)) "\n"
+                           (apply str (map (fn [head] (str head \,
+                                                           (apply str (map #(str (if (= head (:tail (get @links %)))
+                                                                                   (:weight (get @links %))
+                                                                                   "0.0") \,)
+                                                                           nodes))
+                                                           "\n")) nodes)))}
+    "edit"
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
            [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
                            (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
+           " "
+           [:a {:href "/resilience/mode/download"} "download"]
            (if-let [node (params "node")]
              (str "<img src=\"/resilience/img/edit/"
                   (when-let [tail (params "tail")] (str tail "/"))
@@ -230,7 +244,7 @@
                   (when-let [weight (params "weight")] (str "/" weight))
                   "\" ismap usemap=\"#G\" />")
              "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />"))))
-
+  
 ;; define routes
 (defroutes webservice
   ;;links for editing
