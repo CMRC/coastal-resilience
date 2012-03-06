@@ -177,9 +177,13 @@
 (def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
 (def links (ref {}))
 
+(defn if-weight [weight] (if weight weight "0"))
+(defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
+(defn inc-weight [weight] (str (mod (inc (Integer/parseInt (if-weight weight))) 7)))
+(defn display-weight [weight] (str (float (/ (url-weight weight) 4))))
+    
 (defn edit-links [params]
-  (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")
-        gv (GraphViz.)]
+  (let [gv (GraphViz.)]
     (.addln gv (.start_graph gv))
     (dorun (map #(.addln gv (str % "[URL=\"/resilience/mode/edit/"
                                  (when-let [node (params "node")]
@@ -190,13 +194,13 @@
                                  "];"))
                 nodes))
     (dorun (map #(.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
-                                 (:weight (get @links [(:head (val %)) (:tail (val %))])) "\"];")) @links))
+                                 (display-weight (:weight (get @links [(:head (val %)) (:tail (val %))]))) "\"];")) @links))
     (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
-                      "[label=\"" weight "\",URL=\"/resilience/mode/edit/"
+                      "[label=\"" (display-weight (params "weight")) "\",URL=\"/resilience/mode/edit/"
                       tail "/"
                       (params "node")
-                      "/" weight "\",weight=0,color=blue,style=dashed]")))
+                      "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
         (.addln gv (.end_graph gv))
     (cond
      (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
@@ -227,14 +231,14 @@
                 :body (str "," (apply str (map #(str % \,) nodes)) "\n"
                            (apply str (map (fn [tail] (str tail \,
                                                            (apply str (map (fn [head] (str (if (= tail (:tail (get @links [head tail])))
-                                                                                             (:weight (get @links [head tail]))
+                                                                                             (display-weight (:weight (get @links [head tail])))
                                                                                              "0.0") \,))
                                                                            nodes))
                                                            "\n")) nodes)))}
     "edit"
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
            [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
-                           (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1"))} "save"]
+                           (if-weight (params "weight")))} "save"]
            " "
            [:a {:href "/resilience/mode/download"} "download"]
            (if-let [node (params "node")]
