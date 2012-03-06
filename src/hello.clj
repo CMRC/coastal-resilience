@@ -175,8 +175,7 @@
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
 (def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
-(def links (ref {"Coastal_Squeeze" {:tail "Agriculture" :head "Coastal_Squeeze" :weight 1}
-                 "Wetlands" {:tail "Coastal_Squeeze" :head "Wetlands" :weight 2}}))
+(def links (ref {}))
 
 (defn edit-links [params]
   (let [weight (if-let [w (params "weight")] (mod (inc (Integer/parseInt w)) 4) "1")
@@ -215,7 +214,7 @@
 (defn edit-links-html [params]
   (case (params "mode")
     "save"     (do (dosync
-                    (alter links conj @links [(params "node")
+                    (alter links conj @links [[(params "node") (params "tail")]
                                               {:head (params "node")
                                                :tail (params "tail")
                                                :weight (params "weight")}]))
@@ -225,10 +224,10 @@
                 :headers {"Content-Type" "text/csv"
                           "Content-Disposition" "attachment;filename=matrix.csv"}
                 :body (str "," (apply str (map #(str % \,) nodes)) "\n"
-                           (apply str (map (fn [head] (str head \,
-                                                           (apply str (map #(str (if (= head (:tail (get @links %)))
-                                                                                   (:weight (get @links %))
-                                                                                   "0.0") \,)
+                           (apply str (map (fn [tail] (str tail \,
+                                                           (apply str (map (fn [head] (str (if (= tail (:tail (get @links [head tail])))
+                                                                                             (:weight (get @links [head tail]))
+                                                                                             "0.0") \,))
                                                                            nodes))
                                                            "\n")) nodes)))}
     "edit"
