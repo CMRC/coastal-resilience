@@ -189,14 +189,15 @@
                                      )
                                  "];"))
                 nodes))
-    (dorun (map #(.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\"" weight "\"];")) @links))
+    (dorun (map #(.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
+                                 (:weight (get @links [(:head (val %)) (:tail (val %))])) "\"];")) @links))
     (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
                       "[label=\"" weight "\",URL=\"/resilience/mode/edit/"
                       tail "/"
                       (params "node")
                       "/" weight "\",weight=0,color=blue,style=dashed]")))
-    (.addln gv (.end_graph gv))
+        (.addln gv (.end_graph gv))
     (cond
      (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
                                        in-stream (do
