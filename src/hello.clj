@@ -218,11 +218,14 @@
 
 (defn edit-links-html [params]
   (case (params "mode")
-    "save"     (do (dosync
-                    (alter links conj @links [[(params "node") (params "tail")]
-                                              {:head (params "node")
-                                               :tail (params "tail")
-                                               :weight (params "weight")}]))
+    "save"     (do (if (= (params "weight") "3") ;;maps to zero
+                     (dosync
+                      (alter links dissoc @links [(params "node") (params "tail")]))
+                     (dosync
+                      (alter links conj @links [[(params "node") (params "tail")]
+                                                {:head (params "node")
+                                                 :tail (params "tail")
+                                                 :weight (params "weight")}])))
                    {:status 303
                     :headers {"Location" "/resilience/mode/edit"}})
     "download" {:status 200
