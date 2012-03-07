@@ -174,7 +174,25 @@
       [:div {:style "clear: both"}
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
-(def nodes ["Agriculture" "Coastal_Squeeze" "Local_Authority" "Enforcement" "Wetlands"])
+(def nodes ["ECONOMIC GROWTH"
+            "ENVIRONMENTAL INSTITUTIONS"
+            "REGULATORY DRIVERS"
+            "PHYSICAL DRIVERS"
+            "ECONOMIC DRIVERS"
+            "LAND FORM DYNAMICS"
+            "EXTRACTION/POLLUTION DYNAMICS"
+            "CONSERVATION DYNAMICS"
+            "HABITATS/LANDFORMS"
+            "SOCIETAL WELLBEING"
+            "BIOLOGICAL SERVICES"
+            "HABITAT/LANDFORM SERVICES"
+            "CULTURAL SERVICES"
+            "GOVERNANCE RESPONSES"
+            ])
+
+(defn urlify-nodes []
+  (map encode-nodename nodes))
+  
 (def links (ref {}))
 
 (defn if-weight [weight] (if weight weight "0"))
@@ -192,9 +210,10 @@
                                  (if (= % (params "node")) ",color=blue,style=filled"
                                      )
                                  "];"))
-                nodes))
-    (dorun (map #(.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
-                                 (display-weight (:weight (get @links [(:head (val %)) (:tail (val %))]))) "\"];")) @links))
+                (urlify-nodes)))
+    (dorun (map #(let [w (:weight (get @links [(:head (val %)) (:tail (val %))]))]
+                   (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
+                                   (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) @links))
     (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
                       "[label=\"" (display-weight (params "weight")) "\",URL=\"/resilience/mode/edit/"
