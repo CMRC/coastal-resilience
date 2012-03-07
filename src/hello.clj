@@ -134,11 +134,11 @@
      (graph-viz id strength dir "no" data-file format))
   ([id strength dir link data-file format]
      (do-graph id strength dir data-file format)
-     (let [graph (.getGraph gv (.getDotSource gv) "gif")
+     (let [graph (.getGraph gv (.getDotSource gv) "png")
            in-stream (do
                        (ByteArrayInputStream. graph))]
        {:status 200	 
-        :headers {"Content-Type" "image/gif"}
+        :headers {"Content-Type" "image/png"}
         :body in-stream})))
 
 (defn html-doc 
@@ -191,7 +191,7 @@
             ])
 
 (defn urlify-nodes []
-  (map encode-nodename nodes))
+  (map #(vector (encode-nodename %) %) nodes))
   
 (def links (ref {}))
 
@@ -203,11 +203,11 @@
 (defn edit-links [params]
   (let [gv (GraphViz.)]
     (.addln gv (.start_graph gv))
-    (dorun (map #(.addln gv (str % "[URL=\"/resilience/mode/edit/"
+    (dorun (map #(.addln gv (str (first %) "[URL=\"/resilience/mode/edit/"
                                  (when-let [node (params "node")]
                                    (str node "/"))
-                                 % "\""
-                                 (if (= % (params "node")) ",color=blue,style=filled"
+                                 (first %) "\""
+                                 (if (= (first %) (params "node")) ",color=blue,style=filled"
                                      )
                                  "];"))
                 (urlify-nodes)))
@@ -222,11 +222,11 @@
                       "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
         (.addln gv (.end_graph gv))
     (cond
-     (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "gif")
+     (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "png")
                                        in-stream (do
                                                    (ByteArrayInputStream. graph))]
                                    {:status 200	 
-                                    :headers {"Content-Type" "image/gif"}
+                                    :headers {"Content-Type" "image/png"}
                                     :body in-stream})
      (= (params "format") "dot")   {:status 200	 
                                     :headers {"Content-Type" "txt"}
@@ -251,12 +251,12 @@
                 :headers {"Content-Type" "text/csv"
                           "Content-Disposition" "attachment;filename=matrix.csv"}
                 :body (str "," (apply str (map #(str % \,) nodes)) "\n"
-                           (apply str (map (fn [tail] (str tail \,
-                                                           (apply str (map (fn [head] (str (if (= tail (:tail (get @links [head tail])))
-                                                                                             (display-weight (:weight (get @links [head tail])))
+                           (apply str (map (fn [tail] (str (second tail) \,
+                                                           (apply str (map (fn [head] (str (if (= (first tail) (:tail (get @links [(first head) (first tail)])))
+                                                                                             (display-weight (:weight (get @links [(first head) (first tail)])))
                                                                                              "0.0") \,))
-                                                                           nodes))
-                                                           "\n")) nodes)))}
+                                                                           (urlify-nodes)))
+                                                           "\n")) (urlify-nodes))))}
     "edit"
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
            [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
