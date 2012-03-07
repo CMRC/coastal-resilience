@@ -18,6 +18,7 @@
 (def default-format "matrix")
 (def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
 
+(defn base-path [params] (str "/resilience/" (params "id")))
 
 (defn encode-nodename
   [nodename]
@@ -252,7 +253,7 @@
 (defn edit-links [params]
   (let [gv (GraphViz.)]
     (.addln gv (.start_graph gv))
-    (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"/resilience/mode/edit/"
+    (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"" (base-path params) "/mode/edit/"
                                  (when-let [node (params "node")]
                                    (str node "/"))
                                  (first %) "\""
@@ -265,7 +266,7 @@
                                    (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) @links))
     (when-let [tail (params "tail")]
       (.addln gv (str tail "->" (params "node")
-                      "[label=\"" (display-weight (params "weight")) "\",URL=\"/resilience/mode/edit/"
+                      "[label=\"" (display-weight (params "weight")) "\",URL=\"" (base-path params) "/mode/edit/"
                       tail "/"
                       (params "node")
                       "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
@@ -290,7 +291,7 @@
                  (dosync
                   (alter nodes conj @nodes [(encode-nodename (params "element")) (params "element")]))
                  {:status 303
-                  :headers {"Location" "/resilience/mode/edit"}})
+                  :headers {"Location" (str (base-path params) "/mode/edit")}})
     "save"     (do (if (= (params "weight") "3") ;;maps to zero
                      (dosync
                       (alter links dissoc @links [(params "node") (params "tail")]))
@@ -300,7 +301,7 @@
                                                  :tail (params "tail")
                                                  :weight (params "weight")}])))
                    {:status 303
-                    :headers {"Location" "/resilience/mode/edit"}})
+                    :headers {"Location" (str (base-path params) "/mode/edit")}})
     "download" {:status 200
                 :headers {"Content-Type" "text/csv"
                           "Content-Disposition" "attachment;filename=matrix.csv"}
@@ -314,58 +315,59 @@
     "edit"
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
            [:div {:style "float: left;margin-right: 10px"}
-            (form-to [:get (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
+            (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
                                 (if-weight (params "weight")))]
                      (submit-button "Save"))]
            [:div {:style "float: left;margin-right: 10px"}
-            (form-to [:get "/resilience/mode/download"]
+            (form-to [:get (str (base-path params) "/mode/download")]
                      (submit-button "Download"))]
            [:div {:style "float: left;margin-right: 10px"}
             "Drivers"
-            (form-to [:post "/resilience/mode/add"]
+            (form-to [:post (str (base-path params) "/mode/add")]
                      (drop-down "element" drivers)
                      (submit-button "Add"))]
            [:div {:style "float: left;margin-right: 10px"}
             "Pressures"
-            (form-to [:post "/resilience/mode/add"]
+            (form-to [:post (str (base-path params) "/mode/add")]
                      (drop-down "element" pressures)
                      (submit-button "Add"))]
            [:div {:style "float: left;margin-right: 10px"}
             "State Changes"
-            (form-to [:post "/resilience/mode/add"]
+            (form-to [:post (str (base-path params) "/mode/add")]
                      (drop-down "element" state-changes)
                      (submit-button "Add"))]
            [:div {:style "float: left;margin-right: 10px"}
             "Impacts"
-            (form-to [:post "/resilience/mode/add"]
+            (form-to [:post (str (base-path params) "/mode/add")]
                      (drop-down "element" impacts)
                      (submit-button "Add"))]
            [:div {:style "float: left;margin-right: 10px"}
             "Responses"
-            (form-to [:post "/resilience/mode/add"]
+            (form-to [:post (str (base-path params) "/mode/add")]
                      (drop-down "element" responses)
                      (submit-button "Add"))]
            [:div {:style "clear: both;margin: 20px"}
            (if-let [node (params "node")]
-             (str "<img src=\"/resilience/img/edit/"
+             (str "<img src=\"" (base-path params) "/img/edit/"
                   (when-let [tail (params "tail")] (str tail "/"))
                   node
                   (when-let [weight (params "weight")] (str "/" weight))
                   "\" ismap usemap=\"#G\" />")
-             "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")])))
+             (str "<img src=\"" (base-path params) "/img/edit\" ismap usemap=\"#G\" />"))])))
   
 ;; define routes
 (defroutes webservice
   ;;links for editing
-  (GET "/resilience/:format/edit" {params :params} (edit-links params))
-  (GET "/resilience/:format/edit/:node" {params :params} (edit-links params))
-  (GET "/resilience/:format/edit/:tail/:node" {params :params} (edit-links params))
-  (GET "/resilience/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
-  (GET "/resilience/mode/:mode" {params :params} (edit-links-html params))
-  (POST "/resilience/mode/:mode" {params :params} (edit-links-html params))
-  (GET "/resilience/mode/:mode/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
+  (GET "/resilience/:id/:format/edit" {params :params} (edit-links params))
+  (GET "/resilience/:id/:format/edit/:node" {params :params} (edit-links params))
+  (GET "/resilience/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
+  (GET "/resilience/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
+  (GET "/resilience/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
+  (GET "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
+  (POST "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
+  (GET "/resilience/:id/mode/:mode/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
+  (GET "/resilience/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
   (GET "/resilience/test" {params :params} (edit-links-html {"mode" "edit"}))
   
   (GET ["/resilience/strength/:strength/node/:id/dir/:dir/new/:link/format/:format/data/:data-file" :data-file #".*$"] [id strength dir link data-file format] (html-doc id strength dir link data-file format) )
