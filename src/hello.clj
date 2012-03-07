@@ -203,13 +203,13 @@
 (defn edit-links [params]
   (let [gv (GraphViz.)]
     (.addln gv (.start_graph gv))
-    (dorun (map #(.addln gv (str (first %) "[URL=\"/resilience/mode/edit/"
+    (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"/resilience/mode/edit/"
                                  (when-let [node (params "node")]
                                    (str node "/"))
                                  (first %) "\""
                                  (if (= (first %) (params "node")) ",color=blue,style=filled"
                                      )
-                                 "];"))
+                                 ",label=\"" (second %) "\"];"))
                 (urlify-nodes)))
     (dorun (map #(let [w (:weight (get @links [(:head (val %)) (:tail (val %))]))]
                    (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
@@ -263,13 +263,14 @@
                            (if-weight (params "weight")))} "save"]
            " "
            [:a {:href "/resilience/mode/download"} "download"]
+           [:div {:style "clear: both"}
            (if-let [node (params "node")]
              (str "<img src=\"/resilience/img/edit/"
                   (when-let [tail (params "tail")] (str tail "/"))
                   node
                   (when-let [weight (params "weight")] (str "/" weight))
                   "\" ismap usemap=\"#G\" />")
-             "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />"))))
+             "<img src=\"/resilience/img/edit\" ismap usemap=\"#G\" />")])))
   
 ;; define routes
 (defroutes webservice
