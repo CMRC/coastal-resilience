@@ -174,26 +174,75 @@
       [:div {:style "clear: both"}
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
-(def nodes ["ECONOMIC GROWTH"
-            "ENVIRONMENTAL INSTITUTIONS"
-            "REGULATORY DRIVERS"
-            "PHYSICAL DRIVERS"
-            "ECONOMIC DRIVERS"
-            "LAND FORM DYNAMICS"
-            "EXTRACTION/POLLUTION DYNAMICS"
-            "CONSERVATION DYNAMICS"
-            "HABITATS/LANDFORMS"
-            "SOCIETAL WELLBEING"
-            "BIOLOGICAL SERVICES"
-            "HABITAT/LANDFORM SERVICES"
-            "CULTURAL SERVICES"
-            "GOVERNANCE RESPONSES"
-            ])
+(def nodes (ref {}))
 
-(defn urlify-nodes []
-  (map #(vector (encode-nodename %) %) nodes))
-  
 (def links (ref {}))
+
+(def drivers ["Tourism and Recreation"
+              "Residential Development"
+              "Fisheries"
+              "Agriculture"
+              "Commerce, Industry & Manufacturing"
+              "Aquaculture"])
+
+(def pressures ["Roads and Transport Infrastructure"
+                "Terrestrial Traffic"
+                "Coastal Population Growth"
+                "Coastal Squeeze"
+                "Coastal Access Points"
+                "Port and Marina Facilities"
+                "Marine Traffic"
+                "Commuter Belts/Urban Sprawl"
+                "EROSION"
+                "COASTAL INUNDATION/FLOODING"
+                "DROUGHT"
+                "Local Coastal Processes (OTHER)"
+                "Terrestrial Surface Water Pollution"
+                "Marine Pollution"
+                "Commercial Fishing"
+                "Soil Contamination"
+                "Demand for Resource Access"
+                "Enforcement: Environmental Protection"])
+
+(def state-changes["Benthos"
+                   "Cliff Systems"
+                   "Sea Water Quality"
+                   "Avoidance of Harmful Algal Blooms"
+                   "River Systems"
+                   "Wetlands"
+                   "Dune Systems"
+                   "Ecological Niches: Native Species"
+                   "Local Employment"
+                   "Community Cohesion"
+                   "Integrated Coastal Development"])
+
+(def impacts ["Food Provision: Marine Organisms"
+              "Food Provision: Terrestrial Agriculture"
+              "Inshore Marine Productivity"
+              "Bioremediation: Waste Processing and Removal"
+              "Flood Protection: Storm surge/Tidal/Fluvial"
+              "Sea-Level Rise Buffering"
+              "Raw Material Provision"
+              "Fresh Water Supply "
+              "Marine Transport and Navigation"
+              "Coastal Amenity: Leisure/Recreation"
+              "Habitable Land: Secure Coastal Development"
+              "Cultural Heritage"])
+
+(def responses ["NGO Protest"
+                "Civil Society Lobbying"
+                "Voluntary Community Initiatives"
+                "Champions"
+                "Seek Investment: EU/National/Private"
+                "Economic Diversification"
+                "Increased commercial Exploitation"
+                "Increased Exploitation: Other Marine Sp."
+                "Individual Insurance Cover"
+                "Local Authority Planning/Zoning"
+                "Introduction/Enforcement of bye-laws"
+                "Payment of EU Fines"
+                "Construction of Coastal/Flood Defences"
+                "Re-location away from coast"])
 
 (defn if-weight [weight] (if weight weight "0"))
 (defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
@@ -210,7 +259,7 @@
                                  (if (= (first %) (params "node")) ",color=blue,style=filled"
                                      )
                                  ",label=\"" (second %) "\"];"))
-                (urlify-nodes)))
+                @nodes))
     (dorun (map #(let [w (:weight (get @links [(:head (val %)) (:tail (val %))]))]
                    (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
                                    (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) @links))
@@ -237,6 +286,11 @@
 
 (defn edit-links-html [params]
   (case (params "mode")
+    "add"      (do
+                 (dosync
+                  (alter nodes conj @nodes [(encode-nodename (params "element")) (params "element")]))
+                 {:status 303
+                  :headers {"Location" "/resilience/mode/edit"}})
     "save"     (do (if (= (params "weight") "3") ;;maps to zero
                      (dosync
                       (alter links dissoc @links [(params "node") (params "tail")]))
@@ -250,20 +304,48 @@
     "download" {:status 200
                 :headers {"Content-Type" "text/csv"
                           "Content-Disposition" "attachment;filename=matrix.csv"}
-                :body (str "," (apply str (map #(str % \,) nodes)) "\n"
+                :body (str "," (apply str (map #(str (second %) \,) @nodes)) "\n"
                            (apply str (map (fn [tail] (str (second tail) \,
                                                            (apply str (map (fn [head] (str (if (= (first tail) (:tail (get @links [(first head) (first tail)])))
                                                                                              (display-weight (:weight (get @links [(first head) (first tail)])))
                                                                                              "0.0") \,))
-                                                                           (urlify-nodes)))
-                                                           "\n")) (urlify-nodes))))}
+                                                                           @nodes))
+                                                           "\n")) @nodes)))}
     "edit"
     (html5 (:body (edit-links (conj params {"format" "cmapx" })))
-           [:a {:href (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
-                           (if-weight (params "weight")))} "save"]
-           " "
-           [:a {:href "/resilience/mode/download"} "download"]
-           [:div {:style "clear: both"}
+           [:div {:style "float: left;margin-right: 10px"}
+            (form-to [:get (str "/resilience/mode/save/" (params "tail") "/" (params "node") "/"
+                                (if-weight (params "weight")))]
+                     (submit-button "Save"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            (form-to [:get "/resilience/mode/download"]
+                     (submit-button "Download"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            "Drivers"
+            (form-to [:post "/resilience/mode/add"]
+                     (drop-down "element" drivers)
+                     (submit-button "Add"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            "Pressures"
+            (form-to [:post "/resilience/mode/add"]
+                     (drop-down "element" pressures)
+                     (submit-button "Add"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            "State Changes"
+            (form-to [:post "/resilience/mode/add"]
+                     (drop-down "element" state-changes)
+                     (submit-button "Add"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            "Impacts"
+            (form-to [:post "/resilience/mode/add"]
+                     (drop-down "element" impacts)
+                     (submit-button "Add"))]
+           [:div {:style "float: left;margin-right: 10px"}
+            "Responses"
+            (form-to [:post "/resilience/mode/add"]
+                     (drop-down "element" responses)
+                     (submit-button "Add"))]
+           [:div {:style "clear: both;margin: 20px"}
            (if-let [node (params "node")]
              (str "<img src=\"/resilience/img/edit/"
                   (when-let [tail (params "tail")] (str tail "/"))
@@ -280,6 +362,7 @@
   (GET "/resilience/:format/edit/:tail/:node" {params :params} (edit-links params))
   (GET "/resilience/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
   (GET "/resilience/mode/:mode" {params :params} (edit-links-html params))
+  (POST "/resilience/mode/:mode" {params :params} (edit-links-html params))
   (GET "/resilience/mode/:mode/:node" {params :params} (edit-links-html params))
   (GET "/resilience/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
   (GET "/resilience/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
