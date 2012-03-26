@@ -1,15 +1,21 @@
 (ns hello-world
   (:use compojure.core, ring.adapter.jetty, hiccup.core, hiccup.page-helpers,
-        hiccup.form-helpers)
+        hiccup.form-helpers
+        com.ashafa.clutch.view-server)
   (:require [compojure.route :as route] 
             [clojure.contrib.string :as str] 
-            [clojure.contrib.math :as math])
+            [clojure.contrib.math :as math]
+            [com.ashafa.clutch :as clutch])
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream)
            GraphViz
            (java.net URLEncoder
                      URLDecoder
                      URL)))
+
+(clutch/configure-view-server "resilience" (view-server-exec-string))
+
+(def db "resilience")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
@@ -175,185 +181,199 @@
       [:div {:style "clear: both"}
        (str "<IMG SRC=\"/resilience/strength/" strength "/img/" id "/dir/" dir "/format/" format "/data/" data-file "\" border=\"0\" ismap usemap=\"#G\" />")])))
 
-(def nodes (ref {}))
+(def drivers       ["Environmental Legislation and Policy"
+                    "Tourism and Recreation"
+                    "Residential Development"
+                    "Fisheries"
+                    "Agriculture"
+                    "Commerce, Industry & Manufacturing"
+                    "Aquaculture"])
 
-(def links (ref {}))
+(def pressures     ["Roads and Transport Infrastructure"
+                    "Terrestrial Traffic"
+                    "Coastal Population Growth"
+                    "Coastal Squeeze"
+                    "Coastal Access Points"
+                    "Port and Marina Facilities"
+                    "Marine Traffic"
+                    "Commuter Belts/Urban Sprawl"
+                    "EROSION"
+                    "COASTAL INUNDATION/FLOODING"
+                    "DROUGHT"
+                    "Local Coastal Processes (OTHER)"
+                    "Terrestrial Surface Water Pollution"
+                    "Marine Pollution"
+                    "Commercial Fishing"
+                    "Soil Contamination"
+                    "Demand for Resource Access"
+                    "Enforcement: Environmental Protection"])
 
-(def drivers ["Tourism and Recreation"
-              "Residential Development"
-              "Fisheries"
-              "Agriculture"
-              "Commerce, Industry & Manufacturing"
-              "Aquaculture"])
+(def state-changes ["Benthos"
+                    "Cliff Systems"
+                    "Sea Water Quality"
+                    "Avoidance of Harmful Algal Blooms"
+                    "River Systems"
+                    "Wetlands"
+                    "Dune Systems"
+                    "Ecological Niches: Native Species"
+                    "Local Employment"
+                    "Community Cohesion"
+                    "Integrated Coastal Development"])
 
-(def pressures ["Roads and Transport Infrastructure"
-                "Terrestrial Traffic"
-                "Coastal Population Growth"
-                "Coastal Squeeze"
-                "Coastal Access Points"
-                "Port and Marina Facilities"
-                "Marine Traffic"
-                "Commuter Belts/Urban Sprawl"
-                "EROSION"
-                "COASTAL INUNDATION/FLOODING"
-                "DROUGHT"
-                "Local Coastal Processes (OTHER)"
-                "Terrestrial Surface Water Pollution"
-                "Marine Pollution"
-                "Commercial Fishing"
-                "Soil Contamination"
-                "Demand for Resource Access"
-                "Enforcement: Environmental Protection"])
+(def impacts       ["Food Provision: Marine Organisms"
+                    "Food Provision: Terrestrial Agriculture"
+                    "Inshore Marine Productivity"
+                    "Bioremediation: Waste Processing and Removal"
+                    "Flood Protection: Storm surge/Tidal/Fluvial"
+                    "Sea-Level Rise Buffering"
+                    "Raw Material Provision"
+                    "Fresh Water Supply "
+                    "Marine Transport and Navigation"
+                    "Coastal Amenity: Leisure/Recreation"
+                    "Habitable Land: Secure Coastal Development"
+                    "Cultural Heritage"])
 
-(def state-changes["Benthos"
-                   "Cliff Systems"
-                   "Sea Water Quality"
-                   "Avoidance of Harmful Algal Blooms"
-                   "River Systems"
-                   "Wetlands"
-                   "Dune Systems"
-                   "Ecological Niches: Native Species"
-                   "Local Employment"
-                   "Community Cohesion"
-                   "Integrated Coastal Development"])
-
-(def impacts ["Food Provision: Marine Organisms"
-              "Food Provision: Terrestrial Agriculture"
-              "Inshore Marine Productivity"
-              "Bioremediation: Waste Processing and Removal"
-              "Flood Protection: Storm surge/Tidal/Fluvial"
-              "Sea-Level Rise Buffering"
-              "Raw Material Provision"
-              "Fresh Water Supply "
-              "Marine Transport and Navigation"
-              "Coastal Amenity: Leisure/Recreation"
-              "Habitable Land: Secure Coastal Development"
-              "Cultural Heritage"])
-
-(def responses ["NGO Protest"
-                "Civil Society Lobbying"
-                "Voluntary Community Initiatives"
-                "Champions"
-                "Seek Investment: EU/National/Private"
-                "Economic Diversification"
-                "Increased commercial Exploitation"
-                "Increased Exploitation: Other Marine Sp."
-                "Individual Insurance Cover"
-                "Local Authority Planning/Zoning"
-                "Introduction/Enforcement of bye-laws"
-                "Payment of EU Fines"
-                "Construction of Coastal/Flood Defences"
-                "Re-location away from coast"])
+(def responses     ["NGO Protest"
+                    "Civil Society Lobbying"
+                    "Voluntary Community Initiatives"
+                    "Champions"
+                    "Seek Investment: EU/National/Private"
+                    "Economic Diversification"
+                    "Increased commercial Exploitation"
+                    "Increased Exploitation: Other Marine Sp."
+                    "Individual Insurance Cover"
+                    "Local Authority Planning/Zoning"
+                    "Introduction/Enforcement of bye-laws"
+                    "Payment of EU Fines"
+                    "Construction of Coastal/Flood Defences"
+                    "Re-location away from coast"])
 
 (defn if-weight [weight] (if weight weight "0"))
 (defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
 (defn inc-weight [weight] (str (mod (inc (Integer/parseInt (if-weight weight))) 7)))
 (defn display-weight [weight] (str (float (/ (url-weight weight) 4))))
-    
+
+(defn create-user [email]
+  (clutch/with-db db
+    (clutch/put-document {:user email})))
+
+  
 (defn edit-links [params]
-  (let [gv (GraphViz.)]
-    (.addln gv (.start_graph gv))
-    (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"" (base-path params) "/mode/edit/"
-                                 (when-let [node (params "node")]
-                                   (str node "/"))
-                                 (first %) "\""
-                                 (if (= (first %) (params "node")) ",color=blue,style=filled"
-                                     )
-                                 ",label=\"" (second %) "\"];"))
-                @nodes))
-    (dorun (map #(let [w (:weight (get @links [(:head (val %)) (:tail (val %))]))]
-                   (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
-                                   (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) @links))
-    (when-let [tail (params "tail")]
-      (.addln gv (str tail "->" (params "node")
-                      "[label=\"" (display-weight (params "weight")) "\",URL=\"" (base-path params) "/mode/edit/"
-                      tail "/"
-                      (params "node")
-                      "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
-        (.addln gv (.end_graph gv))
-    (cond
-     (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "png")
-                                       in-stream (do
-                                                   (ByteArrayInputStream. graph))]
-                                   {:status 200	 
-                                    :headers {"Content-Type" "image/png"}
-                                    :body in-stream})
-     (= (params "format") "dot")   {:status 200	 
-                                    :headers {"Content-Type" "txt"}
-                                    :body(.getDotSource gv)}
-     (= (params "format") "cmapx") {:status 200	 
-                                    :headers {"Content-Type" "txt"}
-                                    :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))})))
+  (clutch/with-db db
+    (let [gv (GraphViz.)
+          links (:links (clutch/get-document (params "id")))
+          nodes (:nodes (clutch/get-document (params "id")))]
+      (.addln gv (.start_graph gv))
+      (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"" (base-path params) "/mode/edit/"
+                                   (when-let [node (params "node")]
+                                     (str node "/"))
+                                   (name (first %)) "\""
+                                   (if (= (name (first %)) (params "node")) ",color=blue,style=filled"
+                                       )
+                                   ",label=\"" (second %) "\"];"))
+                  nodes))
+      (dorun (map #(let [w (:weight (get links (keyword (str (:head (val %)) (:tail (val %))))))]
+                     (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
+                                     (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) links))
+      (when-let [tail (params "tail")]
+        (.addln gv (str tail "->" (params "node")
+                        "[label=\"" (display-weight (params "weight")) "\",URL=\"" (base-path params) "/mode/edit/"
+                        tail "/"
+                        (params "node")
+                        "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
+      (.addln gv (.end_graph gv))
+      (cond
+       (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "png")
+                                         in-stream (do
+                                                     (ByteArrayInputStream. graph))]
+                                     {:status 200	 
+                                      :headers {"Content-Type" "image/png"}
+                                      :body in-stream})
+       (= (params "format") "dot")   {:status 200	 
+                                      :headers {"Content-Type" "txt"}
+                                      :body(.getDotSource gv)}
+       (= (params "format") "cmapx") {:status 200	 
+                                      :headers {"Content-Type" "txt"}
+                                      :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))))
 
 (defn edit-links-html [params]
-  (case (params "mode")
-    "add"      (do
-                 (dosync
-                  (alter nodes conj @nodes [(encode-nodename (params "element")) (params "element")]))
-                 {:status 303
-                  :headers {"Location" (str (base-path params) "/mode/edit")}})
-    "save"     (do (if (= (params "weight") "3") ;;maps to zero
-                     (dosync
-                      (alter links dissoc @links [(params "node") (params "tail")]))
-                     (dosync
-                      (alter links conj @links [[(params "node") (params "tail")]
-                                                {:head (params "node")
-                                                 :tail (params "tail")
-                                                 :weight (params "weight")}])))
-                   {:status 303
-                    :headers {"Location" (str (base-path params) "/mode/edit")}})
-    "download" {:status 200
-                :headers {"Content-Type" "text/csv"
-                          "Content-Disposition" "attachment;filename=matrix.csv"}
-                :body (str "," (apply str (map #(str (second %) \,) @nodes)) "\n"
-                           (apply str (map (fn [tail] (str (second tail) \,
-                                                           (apply str (map (fn [head] (str (if (= (first tail) (:tail (get @links [(first head) (first tail)])))
-                                                                                             (display-weight (:weight (get @links [(first head) (first tail)])))
-                                                                                             "0.0") \,))
-                                                                           @nodes))
-                                                           "\n")) @nodes)))}
-    "edit"
-    (html5 (:body (edit-links (conj params {"format" "cmapx" })))
-           [:div {:style "float: left;margin-right: 10px"}
-            (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
-                                (if-weight (params "weight")))]
-                     (submit-button "Save"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            (form-to [:get (str (base-path params) "/mode/download")]
-                     (submit-button "Download"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            "Drivers"
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" drivers)
-                     (submit-button "Add"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            "Pressures"
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" pressures)
-                     (submit-button "Add"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            "State Changes"
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" state-changes)
-                     (submit-button "Add"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            "Impacts"
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" impacts)
-                     (submit-button "Add"))]
-           [:div {:style "float: left;margin-right: 10px"}
-            "Responses"
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" responses)
-                     (submit-button "Add"))]
-           [:div {:style "clear: both;margin: 20px"}
-           (if-let [node (params "node")]
-             (str "<img src=\"" (base-path params) "/img/edit/"
-                  (when-let [tail (params "tail")] (str tail "/"))
-                  node
-                  (when-let [weight (params "weight")] (str "/" weight))
-                  "\" ismap usemap=\"#G\" />")
-             (str "<img src=\"" (base-path params) "/img/edit\" ismap usemap=\"#G\" />"))])))
+  (clutch/with-db db
+    (let [doc (clutch/get-document (params "id"))
+          links (:links doc)
+          nodes (:nodes doc)]
+      (case (params "mode")
+        "add"      (do
+                     (clutch/update-document
+                      (merge doc
+                             {:nodes (merge nodes
+                                            {(encode-nodename (params "element")) (params "element")})}))
+                     {:status 303
+                      :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "save"     (do (if (= (params "weight") "3") ;;maps to zero
+                         (println "TODO: delete if zero")
+                         (clutch/update-document
+                          (merge doc
+                                 {:links (merge links
+                                                {(str (params "node")
+                                                      (params "tail"))
+                                                 {:head (params "node")
+                                                  :tail (params "tail")
+                                                  :weight (params "weight")}})})))
+                       {:status 303
+                        :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "download" 
+        {:status 200
+         :headers {"Content-Type" "text/csv"
+                   "Content-Disposition" "attachment;filename=matrix.csv"}
+         :body (str "," (apply str (map #(str (second %) \,) nodes)) "\n"
+                    (apply str (map (fn [tail] (str (second tail) \,
+                                                    (apply str (map (fn [head] (str (if (= (first tail) (:tail (get links [(first head) (first tail)])))
+                                                                                      (display-weight (:weight (get links [(first head) (first tail)])))
+                                                                                      "0.0") \,))
+                                                                    nodes))
+                                                    "\n")) nodes)))}
+        "edit"
+        (html5 (:body (edit-links (conj params {"format" "cmapx" })))
+               [:div {:style "float: left;margin-right: 10px"}
+                (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
+                                    (if-weight (params "weight")))]
+                         (submit-button "Save"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                (form-to [:get (str (base-path params) "/mode/download")]
+                         (submit-button "Download"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "Drivers"
+                (form-to [:post (str (base-path params) "/mode/add")]
+                         (drop-down "element" drivers)
+                         (submit-button "Add"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "Pressures"
+                (form-to [:post (str (base-path params) "/mode/add")]
+                         (drop-down "element" pressures)
+                         (submit-button "Add"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "State Changes"
+                (form-to [:post (str (base-path params) "/mode/add")]
+                         (drop-down "element" state-changes)
+                         (submit-button "Add"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "Impacts"
+                (form-to [:post (str (base-path params) "/mode/add")]
+                         (drop-down "element" impacts)
+                         (submit-button "Add"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "Responses"
+                (form-to [:post (str (base-path params) "/mode/add")]
+                         (drop-down "element" responses)
+                         (submit-button "Add"))]
+               [:div {:style "clear: both;margin: 20px"}
+                (if-let [node (params "node")]
+                  (str "<img src=\"" (base-path params) "/img/edit/"
+                       (when-let [tail (params "tail")] (str tail "/"))
+                       node
+                       (when-let [weight (params "weight")] (str "/" weight))
+                       "\" ismap usemap=\"#G\" />")
+                  [:img {:src (str (base-path params) "/img/edit") :ismap "" :usemap "#G" :style "width:800;height:600"}])])))))
   
 ;; define routes
 (defroutes webservice

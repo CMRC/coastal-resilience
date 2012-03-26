@@ -15,3 +15,9 @@ http://coastalresilience.ie
 [[https://github.com/technomancy/leiningen][Leiningen]]
 
 GraphViz
+
+** License
+
+Copyright (C) 2011 Coastal & Marine Research Centre
+
+Distributed under the Eclipse Public License, the same as Clojure.
