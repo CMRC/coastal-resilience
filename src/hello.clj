@@ -322,15 +322,20 @@
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "save"     (do (if (= (params "weight") "3") ;;maps to zero
-                         (println "TODO: delete if zero")
-                         (clutch/update-document
+                         (clutch/put-document
                           (merge doc
-                                 {:links (merge links
-                                                {(str (params "node")
-                                                      (params "tail"))
-                                                 {:head (params "node")
-                                                  :tail (params "tail")
-                                                  :weight (params "weight")}})})))
+                                 {:links (dissoc links
+                                                 (keyword (str (params "node")
+                                                               (params "tail"))))}))
+                          (clutch/put-document
+                          (merge doc
+                                 {:links
+                                  (merge links
+                                         {(keyword (str (params "node")
+                                                        (params "tail")))
+                                          {:head (params "node")
+                                           :tail (params "tail")
+                                           :weight (params "weight")}})})))
                        {:status 303
                         :headers {"Location" (str (base-path params) "/mode/edit")}})
         "download" 
