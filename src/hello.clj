@@ -255,9 +255,10 @@
 
 (defn create-user [email]
   (clutch/with-db db
-    (clutch/put-document {:user email})))
+    (if-let [user (seq (clutch/get-view "users" :by-user {:key email}))]
+      (clutch/put-document (merge (:value (first user)) {:user email}))
+      (clutch/put-document {:user email}))))
 
-  
 (defn edit-links [params]
   (clutch/with-db db
     (let [gv (GraphViz.)
@@ -296,12 +297,23 @@
                                       :headers {"Content-Type" "txt"}
                                       :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))))
 
+(defn save-views []
+  (clutch/with-db db
+    (clutch/save-view "users"
+                      (clutch/view-server-fns
+                       :clojure
+                       {:by-user
+                        {:map (fn [doc] [[(:user doc) doc]])}}))))
+
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [doc (clutch/get-document (params "id"))
           links (:links doc)
           nodes (:nodes doc)]
       (case (params "mode")
+        "login"    (let [id (:_id (create-user (params "email")))]
+                     {:status 303
+                      :headers {"Location" (str "/resilience/" id "/mode/edit")}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
@@ -366,6 +378,14 @@
                 (form-to [:post (str (base-path params) "/mode/add")]
                          (drop-down "element" responses)
                          (submit-button "Add"))]
+               [:div {:style "float: left;margin-right: 10px"}
+                "email"
+                (form-to [:post (str (base-path params) "/mode/login")]
+                         (text-area "email"
+                                    (if-let [doc (clutch/get-document (params "id"))]
+                                      (:user doc)
+                                      ""))
+                         (submit-button "Login"))]
                [:div {:style "clear: both;margin: 20px"}
                 (if-let [node (params "node")]
                   (str "<img src=\"" (base-path params) "/img/edit/"
