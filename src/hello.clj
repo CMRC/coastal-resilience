@@ -366,46 +366,48 @@
                             nodes)))}
         "edit"
         (html5 (:body (edit-links (conj params {"format" "cmapx" })))
-               [:div {:style "float: left;margin-right: 10px"}
-                (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
-                                    (if-weight (params "weight")))]
-                         (submit-button "Save"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                (form-to [:get (str (base-path params) "/mode/download")]
-                         (submit-button "Download"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "Drivers"
-                (form-to [:post (str (base-path params) "/mode/add")]
-                         (drop-down "element" drivers)
-                         (submit-button "Add"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "Pressures"
-                (form-to [:post (str (base-path params) "/mode/add")]
-                         (drop-down "element" pressures)
-                         (submit-button "Add"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "State Changes"
-                (form-to [:post (str (base-path params) "/mode/add")]
-                         (drop-down "element" state-changes)
-                         (submit-button "Add"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "Impacts"
-                (form-to [:post (str (base-path params) "/mode/add")]
-                         (drop-down "element" impacts)
-                         (submit-button "Add"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "Responses"
-                (form-to [:post (str (base-path params) "/mode/add")]
-                         (drop-down "element" responses)
-                         (submit-button "Add"))]
-               [:div {:style "float: left;margin-right: 10px"}
-                "email"
-                (form-to [:post (str (base-path params) "/mode/login")]
-                         (text-area "email"
-                                    (if-let [doc (clutch/get-document (params "id"))]
-                                      (:user doc)
-                                      ""))
-                         (submit-button "Login"))]
+               [:div
+                [:div {:style "clear: both;margin: 20px"}
+                 [:div {:style "float: left;margin-right: 10px"}
+                  (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
+                                      (if-weight (params "weight")))]
+                           (submit-button "Save"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  (form-to [:get (str (base-path params) "/mode/download")]
+                           (submit-button "Download"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  (form-to [:post (str (base-path params) "/mode/login")]
+                           (text-area "email"
+                                      (if-let [doc (clutch/get-document (params "id"))]
+                                        (:user doc)
+                                        ""))
+                           (submit-button "Login"))]]
+                [:div {:style "clear: both;margin: 20px"}
+                 [:div {:style "float: left;margin-right: 10px"}
+                  "Drivers"
+                  (form-to [:post (str (base-path params) "/mode/add")]
+                           (drop-down "element" drivers)
+                           (submit-button "Add"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  "Pressures"
+                  (form-to [:post (str (base-path params) "/mode/add")]
+                           (drop-down "element" pressures)
+                           (submit-button "Add"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  "State Changes"
+                  (form-to [:post (str (base-path params) "/mode/add")]
+                           (drop-down "element" state-changes)
+                           (submit-button "Add"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  "Impacts"
+                  (form-to [:post (str (base-path params) "/mode/add")]
+                           (drop-down "element" impacts)
+                           (submit-button "Add"))]
+                 [:div {:style "float: left;margin-right: 10px"}
+                  "Responses"
+                  (form-to [:post (str (base-path params) "/mode/add")]
+                           (drop-down "element" responses)
+                           (submit-button "Add"))]]]
                [:div {:style "clear: both;margin: 20px"}
                 (if-let [node (params "node")]
                   (str "<img src=\"" (base-path params) "/img/edit/"
@@ -413,7 +415,7 @@
                        node
                        (when-let [weight (params "weight")] (str "/" weight))
                        "\" ismap usemap=\"#G\" />")
-                  [:img {:src (str (base-path params) "/img/edit") :ismap "" :usemap "#G" :style "width:800;height:600"}])])))))
+                  [:img {:src (str (base-path params) "/img/edit") :ismap "" :usemap "#G"}])])))))
   
 ;; define routes
 (defroutes webservice
