@@ -342,13 +342,28 @@
         {:status 200
          :headers {"Content-Type" "text/csv"
                    "Content-Disposition" "attachment;filename=matrix.csv"}
-         :body (str "," (apply str (map #(str (second %) \,) nodes)) "\n"
-                    (apply str (map (fn [tail] (str (second tail) \,
-                                                    (apply str (map (fn [head] (str (if (= (first tail) (:tail (get links [(first head) (first tail)])))
-                                                                                      (display-weight (:weight (get links [(first head) (first tail)])))
-                                                                                      "0.0") \,))
-                                                                    nodes))
-                                                    "\n")) nodes)))}
+         :body (str "," (apply str (map #(str (second %) \,) nodes)) "\n"     ;;header row
+                    (apply str                                               
+                           (map                                               ;;value rows
+                            (fn [tail]                                        ;;each elem as a potential tail
+                              (str (second tail) \,                           ;;elem name at start of row
+                                   (apply str
+                                          (map                                ;;each elem as a potential head
+                                           (fn [head]
+                                             (str (if                         ;;loop through links, finding matches
+                                                      (= (name (first tail))  ;; value of key,value
+                                                         (:tail (get links    ;; tail matches tail, get weight
+                                                                     (keyword 
+                                                                      (str (name (first head))
+                                                                           (name (first tail)))))))
+                                                    (display-weight           ;;cell value
+                                                     (:weight (get links (keyword
+                                                                          (str (name (first head))
+                                                                               (name (first tail)))))))
+                                                    "0.0") \,))               ;;no link, =zero
+                                           nodes))
+                                   "\n"))
+                            nodes)))}
         "edit"
         (html5 (:body (edit-links (conj params {"format" "cmapx" })))
                [:div {:style "float: left;margin-right: 10px"}
