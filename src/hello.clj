@@ -269,13 +269,22 @@
                                    (when-let [node (params "node")]
                                      (str node "/"))
                                    (name (first %)) "\""
-                                   (if (= (name (first %)) (params "node")) ",color=blue,style=filled"
-                                       )
+                                   (if (some #{(second %)} drivers) ",color=skyblue1, style=filled")
+                                   (if (some #{(second %)} responses) ",color=lightpink, style=filled")
+                                   (if (some #{(second %)} pressures) ",color=olivedrab2, style=filled")
+                                   (if (some #{(second %)} impacts) ",color=palegreen3, style=filled")
+                                   (if (some #{(second %)} state-changes) ",color=lemonchiffon, style=filled")
+                                   (if (= (name (first %)) (params "node"))
+                                     ",fillcolor=blue,style=filled")
                                    ",label=\"" (second %) "\"];"))
                   nodes))
       (dorun (map #(let [w (:weight (get links (keyword (str (:head (val %)) (:tail (val %))))))]
                      (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
-                                     (display-weight w) "\",weight=" (math/abs (url-weight w)) "];"))) links))
+                                     (display-weight w) "\",weight="
+                                     (math/abs (url-weight w))
+                                     "color="
+                                     (if (> (url-weight w) 0) "blue" "red")
+                                     "];"))) links))
       (when-let [tail (params "tail")]
         (.addln gv (str tail "->" (params "node")
                         "[label=\"" (display-weight (params "weight")) "\",URL=\"" (base-path params) "/mode/edit/"
@@ -304,7 +313,7 @@
                        :clojure
                        {:by-user
                         {:map (fn [doc] [[(:user doc) doc]])}}))))
-
+(save-views)
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [doc (clutch/get-document (params "id"))
