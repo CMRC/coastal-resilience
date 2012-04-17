@@ -269,15 +269,15 @@
                                    (when-let [node (params "node")]
                                      (str node "/"))
                                    (name (first %)) "\""
-                                   (if (some #{(second %)} drivers) ",color=skyblue1, style=filled")
-                                   (if (some #{(second %)} responses) ",color=lightpink, style=filled")
-                                   (if (some #{(second %)} pressures) ",color=olivedrab2, style=filled")
-                                   (if (some #{(second %)} impacts) ",color=palegreen3, style=filled")
-                                   (if (some #{(second %)} state-changes) ",color=lemonchiffon, style=filled")
-                                   (if (= (name (first %)) (params "node"))
-                                     ",fillcolor=blue,style=filled")
+                                   (if (some #{(second %)} drivers) ",color=\"#ca0020\", style=filled")
+                                   (if (some #{(second %)} responses) ",color=\"#f4a582\", style=filled")
+                                   (if (some #{(second %)} pressures) ",color=\"#f7f7f7\", style=filled")
+                                   (if (some #{(second %)} impacts) ",color=\"#92c5de\", style=filled")
+                                   (if (some #{(second %)} state-changes) ",color=\"#0571b0\", style=filled")
                                    ",label=\"" (second %) "\"];"))
                   nodes))
+      (if (and (params "node") (not (params "tail")))
+        (.addln gv (str (params "node") "-> \"select target node\";")))
       (dorun (map #(let [w (:weight (get links (keyword (str (:head (val %)) (:tail (val %))))))]
                      (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
                                      (display-weight w) "\",weight="
@@ -313,7 +313,7 @@
                        :clojure
                        {:by-user
                         {:map (fn [doc] [[(:user doc) doc]])}}))))
-(save-views)
+
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [doc (clutch/get-document (params "id"))
@@ -386,7 +386,7 @@
                            (submit-button "Download"))]
                  [:div {:style "float: left;margin-right: 10px"}
                   (form-to [:post (str (base-path params) "/mode/login")]
-                           (text-area "email"
+                           (text-field "email"
                                       (if-let [doc (clutch/get-document (params "id"))]
                                         (:user doc)
                                         ""))
