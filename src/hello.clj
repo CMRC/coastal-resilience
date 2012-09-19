@@ -13,7 +13,7 @@
                      URLDecoder
                      URL)))
 
-(clutch/configure-view-server "resilience" (view-server-exec-string))
+;;(clutch/configure-view-server "resilience" (view-server-exec-string))
 
 (def db "resilience")
 (def lowlight "grey")
@@ -141,11 +141,11 @@
      (graph-viz id strength dir "no" data-file format))
   ([id strength dir link data-file format]
      (do-graph id strength dir data-file format)
-     (let [graph (.getGraph gv (.getDotSource gv) "png")
+     (let [graph (.getGraph gv (.getDotSource gv) "svg")
            in-stream (do
                        (ByteArrayInputStream. graph))]
        {:status 200	 
-        :headers {"Content-Type" "image/png"}
+        :headers {"Content-Type" "image/svg+xml"}
         :body in-stream})))
 
 (defn html-doc 
@@ -274,7 +274,7 @@
                                    (if (some #{(second %)} pressures) ",color=\"#f7f7f7\", style=filled")
                                    (if (some #{(second %)} impacts) ",color=\"#92c5de\", style=filled")
                                    (if (some #{(second %)} state-changes) ",color=\"#0571b0\", style=filled")
-                                   ",label=\"" (second %) "\"];"))
+                                   ",label=\"" (second %) "\",target=\"_top\"];"))
                   nodes))
       (if (and (params "node") (not (params "tail")))
         (.addln gv (str (params "node") "-> \"select target node\";")))
@@ -287,17 +287,18 @@
                                      "];"))) links))
       (when-let [tail (params "tail")]
         (.addln gv (str tail "->" (params "node")
-                        "[label=\"" (display-weight (params "weight")) "\",URL=\"" (base-path params) "/mode/edit/"
+                        "[target=\"_top\",label=\"" (display-weight (params "weight")) "\",URL=\""
+                        (base-path params) "/mode/edit/"
                         tail "/"
                         (params "node")
                         "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
       (.addln gv (.end_graph gv))
       (cond
-       (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "png")
+       (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "svg")
                                          in-stream (do
                                                      (ByteArrayInputStream. graph))]
                                      {:status 200	 
-                                      :headers {"Content-Type" "image/png"}
+                                      :headers {"Content-Type" "image/svg+xml"}
                                       :body in-stream})
        (= (params "format") "dot")   {:status 200	 
                                       :headers {"Content-Type" "txt"}
@@ -313,6 +314,8 @@
                        :clojure
                        {:by-user
                         {:map (fn [doc] [[(:user doc) doc]])}}))))
+;;(save-views)
+
 
 (defn edit-links-html [params]
   (clutch/with-db db
@@ -419,12 +422,12 @@
                            (submit-button "Add"))]]]
                [:div {:style "clear: both;margin: 20px"}
                 (if-let [node (params "node")]
-                  (str "<img src=\"" (base-path params) "/img/edit/"
+                  (str "<object data=\"" (base-path params) "/img/edit/"
                        (when-let [tail (params "tail")] (str tail "/"))
                        node
                        (when-let [weight (params "weight")] (str "/" weight))
-                       "\" ismap usemap=\"#G\" />")
-                  [:img {:src (str (base-path params) "/img/edit") :ismap "" :usemap "#G"}])])))))
+                       "\"/>")
+                  [:object {:data (str (base-path params) "/img/edit") :type "image/svg+xml" }])])))))
   
 ;; define routes
 (defroutes webservice
