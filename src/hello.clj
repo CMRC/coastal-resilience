@@ -1,11 +1,13 @@
 (ns hello-world
-  (:use compojure.core, ring.adapter.jetty, hiccup.core, hiccup.page-helpers,
-        hiccup.form-helpers
+  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
+        hiccup.core, hiccup.form, hiccup.page
         com.ashafa.clutch.view-server)
-  (:require [compojure.route :as route] 
+  (:require [compojure.route :as route]
+            [clojure.xml :as xml] 
             [clojure.contrib.string :as str] 
             [clojure.contrib.math :as math]
-            [com.ashafa.clutch :as clutch])
+            [com.ashafa.clutch :as clutch]
+            [analemma.xml :as ana])
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream)
            GraphViz
@@ -24,7 +26,7 @@
 (def default-format "matrix")
 (def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
 
-(defn base-path [params] (str "/resilience/" (params "id")))
+(defn base-path [params] (str "/resilience/" (params :id)))
 
 (defn encode-nodename
   [nodename]
@@ -259,14 +261,24 @@
       (clutch/put-document (merge (:value (first user)) {:user email}))
       (clutch/put-document {:user email}))))
 
+(def js "
+var svg   = document.getElementsByTagName('svg')[0];
+var svgNS = svg.getAttribute('xmlns');
+var pt    = svg.createSVGPoint();
+
+function cursorPoint(evt){
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+}")
+
 (defn edit-links [params]
   (clutch/with-db db
     (let [gv (GraphViz.)
-          links (:links (clutch/get-document (params "id")))
-          nodes (:nodes (clutch/get-document (params "id")))]
+          links (:links (clutch/get-document (params :id)))
+          nodes (:nodes (clutch/get-document (params :id)))]
       (.addln gv (.start_graph gv))
       (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"" (base-path params) "/mode/edit/"
-                                   (when-let [node (params "node")]
+                                   (when-let [node (params :node)]
                                      (str node "/"))
                                    (name (first %)) "\""
                                    (if (some #{(second %)} drivers) ",color=\"#ca0020\", style=filled")
@@ -276,8 +288,8 @@
                                    (if (some #{(second %)} state-changes) ",color=\"#0571b0\", style=filled")
                                    ",label=\"" (second %) "\",target=\"_top\"];"))
                   nodes))
-      (if (and (params "node") (not (params "tail")))
-        (.addln gv (str (params "node") "-> \"select target node\";")))
+      (if (and (params :node) (not (params :tail)))
+        (.addln gv (str (params :node) "-> \"select target node\";\"select target node\"[id=\"selectnode\"];")))
       (dorun (map #(let [w (:weight (get links (keyword (str (:head (val %)) (:tail (val %))))))]
                      (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
                                      (display-weight w) "\",weight="
@@ -285,25 +297,44 @@
                                      "color="
                                      (if (> (url-weight w) 0) "blue" "red")
                                      "];"))) links))
-      (when-let [tail (params "tail")]
-        (.addln gv (str tail "->" (params "node")
-                        "[target=\"_top\",label=\"" (display-weight (params "weight")) "\",URL=\""
+      (when-let [tail (params :tail)]
+        (.addln gv (str tail "->" (params :node)
+                        "[target=\"_top\",label=\"" (display-weight (params :weight)) "\",URL=\""
                         (base-path params) "/mode/edit/"
                         tail "/"
-                        (params "node")
-                        "/" (inc-weight (params "weight")) "\",weight=0,color=blue,style=dashed]")))
+                        (params :node)
+                        "/" (inc-weight (params :weight)) "\",weight=0,color=blue,style=dashed]")))
       (.addln gv (.end_graph gv))
       (cond
-       (= (params "format") "img") (let [graph (.getGraph gv (.getDotSource gv) "svg")
+       (= (params :format) "img") (let [graph (.getGraph gv (.getDotSource gv) "svg")
                                          in-stream (do
-                                                     (ByteArrayInputStream. graph))]
+                                                     (ByteArrayInputStream. graph))
+                                         pxml (xml/parse in-stream)]
                                      {:status 200	 
                                       :headers {"Content-Type" "image/svg+xml"}
-                                      :body in-stream})
-       (= (params "format") "dot")   {:status 200	 
-                                      :headers {"Content-Type" "txt"}
-                                      :body(.getDotSource gv)}
-       (= (params "format") "cmapx") {:status 200	 
+                                      :body (ana/emit
+                                             (->
+                                              (ana/transform-xml
+                                               (ana/parse-xml-map pxml)
+                                               [:rect]
+                                               #(ana/add-attrs
+                                                 % :onmousedown "var n = event.target.parentNode.firstChild;
+                                                                while(n) {
+                                                                  if(n.tagName == 'ellipse') {
+                                                                  n.setAttribute('cy',cursorPoint(event).y);
+                                                                  n.setAttribute('cx',cursorPoint(event).x);}
+                                                                  else {
+                                                                  n.setAttribute('y',cursorPoint(event).y);
+                                                                  n.setAttribute('x',cursorPoint(event).x);}
+                                                                  
+                                                                  n = n.nextSibling;} "))
+                                              (ana/transform-xml
+                                               [:svg]
+                                               #(ana/add-content % [:script js]))))})
+       (= (params :format) "dot")   {:status 200	 
+                                     :headers {"Content-Type" "txt"}
+                                     :body(.getDotSource gv)}
+       (= (params :format) "cmapx") {:status 200	 
                                       :headers {"Content-Type" "txt"}
                                       :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))))
 
@@ -319,11 +350,12 @@
 
 (defn edit-links-html [params]
   (clutch/with-db db
-    (let [doc (clutch/get-document (params "id"))
+    (let [doc (clutch/get-document (params :id))
           links (:links doc)
-          nodes (:nodes doc)]
-      (case (params "mode")
-        "login"    (let [id (:_id (create-user (params "email")))]
+          nodes (:nodes doc)
+          p(println params)]
+      (case (params :mode)
+        "login"    (let [id (:_id (create-user (params :email)))]
                      {:status 303
                       :headers {"Location" (str "/resilience/" id "/mode/edit")}})
         "add"      (do
@@ -333,21 +365,21 @@
                                             {(encode-nodename (params "element")) (params "element")})}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "save"     (do (if (= (params "weight") "3") ;;maps to zero
+        "save"     (do (if (= (params :weight) "3") ;;maps to zero
                          (clutch/put-document
                           (merge doc
                                  {:links (dissoc links
-                                                 (keyword (str (params "node")
-                                                               (params "tail"))))}))
-                          (clutch/put-document
+                                                 (keyword (str (params :node)
+                                                               (params :tail))))}))
+                         (clutch/put-document
                           (merge doc
                                  {:links
                                   (merge links
-                                         {(keyword (str (params "node")
-                                                        (params "tail")))
-                                          {:head (params "node")
-                                           :tail (params "tail")
-                                           :weight (params "weight")}})})))
+                                         {(keyword (str (params :node)
+                                                        (params :tail)))
+                                          {:head (params :node)
+                                           :tail (params :tail)
+                                           :weight (params :weight)}})})))
                        {:status 303
                         :headers {"Location" (str (base-path params) "/mode/edit")}})
         "download" 
@@ -377,58 +409,59 @@
                                    "\n"))
                             nodes)))}
         "edit"
-        (html5 (:body (edit-links (conj params {"format" "cmapx" })))
-               [:div
-                [:div {:style "clear: both;margin: 20px"}
-                 [:div {:style "float: left;margin-right: 10px"}
-                  (form-to [:get (str (base-path params) "/mode/save/" (params "tail") "/" (params "node") "/"
-                                      (if-weight (params "weight")))]
-                           (submit-button "Save"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  (form-to [:get (str (base-path params) "/mode/download")]
-                           (submit-button "Download"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  (form-to [:post (str (base-path params) "/mode/login")]
-                           (text-field "email"
-                                      (if-let [doc (clutch/get-document (params "id"))]
-                                        (:user doc)
-                                        ""))
-                           (submit-button "Login"))]]
-                [:div {:style "clear: both;margin: 20px"}
-                 [:div {:style "float: left;margin-right: 10px"}
-                  "Drivers"
-                  (form-to [:post (str (base-path params) "/mode/add")]
-                           (drop-down "element" drivers)
-                           (submit-button "Add"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  "Pressures"
-                  (form-to [:post (str (base-path params) "/mode/add")]
-                           (drop-down "element" pressures)
-                           (submit-button "Add"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  "State Changes"
-                  (form-to [:post (str (base-path params) "/mode/add")]
-                           (drop-down "element" state-changes)
-                           (submit-button "Add"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  "Impacts"
-                  (form-to [:post (str (base-path params) "/mode/add")]
-                           (drop-down "element" impacts)
-                           (submit-button "Add"))]
-                 [:div {:style "float: left;margin-right: 10px"}
-                  "Responses"
-                  (form-to [:post (str (base-path params) "/mode/add")]
-                           (drop-down "element" responses)
-                           (submit-button "Add"))]]]
-               [:div {:style "clear: both;margin: 20px"}
-                (if-let [node (params "node")]
-                  (str "<object data=\"" (base-path params) "/img/edit/"
-                       (when-let [tail (params "tail")] (str tail "/"))
-                       node
-                       (when-let [weight (params "weight")] (str "/" weight))
-                       "\"/>")
-                  [:object {:data (str (base-path params) "/img/edit") :type "image/svg+xml" }])])))))
-  
+        (html5
+         [:head [:script {:src "/js/script.js"}]]
+         [:body (edit-links (conj params {:format "cmapx" }))
+          [:div
+           [:div {:style "clear: both;margin: 20px"}
+            [:div {:style "float: left;margin-right: 10px"}
+             (form-to [:get (str (base-path params) "/mode/save/" (params :tail) "/" (params :node) "/"
+                                 (if-weight (params :weight)))]
+                      (submit-button "Save"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             (form-to [:get (str (base-path params) "/mode/download")]
+                      (submit-button "Download"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             (form-to [:post (str (base-path params) "/mode/login")]
+                      (text-field "email"
+                                  (if-let [doc (clutch/get-document (params :id))]
+                                    (:user doc)
+                                    ""))
+                      (submit-button "Login"))]]
+           [:div {:style "clear: both;margin: 20px"}
+            [:div {:style "float: left;margin-right: 10px"}
+             "Drivers"
+             (form-to [:post (str (base-path params) "/mode/add")]
+                      (drop-down "element" drivers)
+                      (submit-button "Add"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             "Pressures"
+             (form-to [:post (str (base-path params) "/mode/add")]
+                      (drop-down "element" pressures)
+                      (submit-button "Add"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             "State Changes"
+             (form-to [:post (str (base-path params) "/mode/add")]
+                      (drop-down "element" state-changes)
+                      (submit-button "Add"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             "Impacts"
+             (form-to [:post (str (base-path params) "/mode/add")]
+                      (drop-down "element" impacts)
+                      (submit-button "Add"))]
+            [:div {:style "float: left;margin-right: 10px"}
+             "Responses"
+             (form-to [:post (str (base-path params) "/mode/add")]
+                      (drop-down "element" responses)
+                      (submit-button "Add"))]]]
+          [:div {:style "clear: both;margin: 20px"}
+           (if-let [node (params :node)]
+             (str "<object data=\"" (base-path params) "/img/edit/"
+                  (when-let [tail (params "tail")] (str tail "/"))
+                  node
+                  (when-let [weight (params :weight)] (str "/" weight))
+                  "\"/>")
+             [:object {:data (str (base-path params) "/img/edit") :type "image/svg+xml" }])]])))))
 ;; define routes
 (defroutes webservice
   ;;links for editing
@@ -465,7 +498,8 @@
   (GET "/resilience/strength/:strength/img/" [strength] (graph-viz "all" strength "out" default-data-file default-format) )
   (GET "/resilience/img/:id" [id] (graph-viz id "weak" "out") )
   (GET "/resilience/img/" [] (graph-viz "all" "weak" "out") )
-  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") (params "Format"))))
+  (GET "/resilience/new" {params :params} (html-doc "all" "weak" "out" (params "URL") (params "Format")))
+  (resources "/"))
 
 
-(run-jetty webservice {:port 8000})
+(run-jetty (wrap-params webservice) {:port 8000})
