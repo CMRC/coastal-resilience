@@ -271,35 +271,26 @@ function cursorPoint(evt){
     return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
-for (var a=svg.querySelectorAll('polygon'),i=0,len=a.length;i<len;++i){
-	(function(el){
-		var onmove; // make inner closure available for unregistration
-		el.addEventListener('mousedown',function(e){
-			var mouseStart   = cursorPoint(e);
-			//var elementStart = { x:el['x'].animVal.value, y:el['y'].animVal.value };
-			onmove = function(e){
-				var current = cursorPoint(e);
-				pt.x = current.x - mouseStart.x;
-				pt.y = current.y - mouseStart.y;
-				var m = el.getTransformToElement(svg).inverse();
-				m.e = m.f = 0;
-				pt = pt.matrixTransform(m);
-                                n = svg.getElementById('arrow');
-				n.setAttribute('x1',current.x);
-				n.setAttribute('y1',current.y);
-				n.setAttribute('x2',mouseStart.x);
-				n.setAttribute('y2',mouseStart.y);
-				var dragEvent = document.createEvent('Event');
-				dragEvent.initEvent('dragged', true, true);
-				el.dispatchEvent(dragEvent);
-			};
-			document.body.addEventListener('mousemove',onmove,false);
-		},false);
-		document.body.addEventListener('mouseup',function(){
-			document.body.removeEventListener('mousemove',onmove,false);
-		},false);
-	})(a[i]);
-}")
+var onmove; // make inner closure available for unregistration
+document.body.addEventListener('mouseup',function(e){
+  if(e.target.parentNode.getAttribute('class') == 'node') {
+    var mouseStart   = cursorPoint(e);
+    onmove = function(e){
+      var current = cursorPoint(e);
+      n = svg.getElementById('arrow');
+      n.setAttribute('x1',current.x);
+      n.setAttribute('y1',current.y);
+      n.setAttribute('x2',mouseStart.x);
+      n.setAttribute('y2',mouseStart.y);
+    };
+    document.body.addEventListener('mousemove',onmove,false);
+  }
+},false);
+
+document.body.addEventListener('mousedown',function(){
+  document.body.removeEventListener('mousemove',onmove,false);
+},false);
+")
 
 (defn edit-links [params]
   (clutch/with-db db
