@@ -154,7 +154,7 @@
   ([id strength dir data-file format]
      (html-doc id strength dir "no" data-file format))
   ([id strength dir link data-file format]
-     (html5
+     (xhtml
       (do-map id strength dir data-file format)
       [:div {:style "float: left;width: 400px"}
        (form-to [:get "/resilience/new"]
@@ -163,7 +163,7 @@
                 (submit-button "Submit"))]
       [:div {:style "float: left;width: 200px"}
        [:ul
-        (doall (map #(html5 [:li (if (= strength %)
+        (doall (map #(xhtml [:li (if (= strength %)
                                    %
                                    [:a {:href (str "/resilience/strength/" % "/node/" id "/dir/" dir "/format/" format "/data/" data-file)} %])])
                     ["weak" "medium" "strong"]))]]
@@ -173,7 +173,7 @@
           [:ul
            (doall
             (map
-             #(html5 [:li
+             #(xhtml [:li
                       (if(= dir %)
                         %
                         [:a {:href (str "/resilience/strength/" strength "/node/" id "/dir/" % "/format/" format "/data/" data-file)} %])])
@@ -269,6 +269,36 @@ var pt    = svg.createSVGPoint();
 function cursorPoint(evt){
     pt.x = evt.clientX; pt.y = evt.clientY;
     return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+for (var a=svg.querySelectorAll('polygon'),i=0,len=a.length;i<len;++i){
+	(function(el){
+		var onmove; // make inner closure available for unregistration
+		el.addEventListener('mousedown',function(e){
+			var mouseStart   = cursorPoint(e);
+			//var elementStart = { x:el['x'].animVal.value, y:el['y'].animVal.value };
+			onmove = function(e){
+				var current = cursorPoint(e);
+				pt.x = current.x - mouseStart.x;
+				pt.y = current.y - mouseStart.y;
+				var m = el.getTransformToElement(svg).inverse();
+				m.e = m.f = 0;
+				pt = pt.matrixTransform(m);
+                                n = svg.getElementById('arrow');
+				n.setAttribute('x1',current.x);
+				n.setAttribute('y1',current.y);
+				n.setAttribute('x2',mouseStart.x);
+				n.setAttribute('y2',mouseStart.y);
+				var dragEvent = document.createEvent('Event');
+				dragEvent.initEvent('dragged', true, true);
+				el.dispatchEvent(dragEvent);
+			};
+			document.body.addEventListener('mousemove',onmove,false);
+		},false);
+		document.body.addEventListener('mouseup',function(){
+			document.body.removeEventListener('mousemove',onmove,false);
+		},false);
+	})(a[i]);
 }")
 
 (defn edit-links [params]
@@ -277,16 +307,15 @@ function cursorPoint(evt){
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))]
       (.addln gv (.start_graph gv))
-      (dorun (map #(.addln gv (str (first %) "[shape=box,URL=\"" (base-path params) "/mode/edit/"
-                                   (when-let [node (params :node)]
-                                     (str node "/"))
-                                   (name (first %)) "\""
+      (dorun (map #(.addln gv (str (first %) "[shape=box,"
                                    (if (some #{(second %)} drivers) ",color=\"#ca0020\", style=filled")
                                    (if (some #{(second %)} responses) ",color=\"#f4a582\", style=filled")
                                    (if (some #{(second %)} pressures) ",color=\"#f7f7f7\", style=filled")
                                    (if (some #{(second %)} impacts) ",color=\"#92c5de\", style=filled")
                                    (if (some #{(second %)} state-changes) ",color=\"#0571b0\", style=filled")
                                    ",label=\"" (second %) "\",target=\"_top\"];"))
+
+
                   nodes))
       (if (and (params :node) (not (params :tail)))
         (.addln gv (str (params :node) "-> \"select target node\";\"select target node\"[id=\"selectnode\"];")))
@@ -310,27 +339,13 @@ function cursorPoint(evt){
                                          in-stream (do
                                                      (ByteArrayInputStream. graph))
                                          pxml (xml/parse in-stream)]
-                                     {:status 200	 
-                                      :headers {"Content-Type" "image/svg+xml"}
-                                      :body (ana/emit
-                                             (->
-                                              (ana/transform-xml
-                                               (ana/parse-xml-map pxml)
-                                               [:rect]
-                                               #(ana/add-attrs
-                                                 % :onmousedown "var n = event.target.parentNode.firstChild;
-                                                                while(n) {
-                                                                  if(n.tagName == 'ellipse') {
-                                                                  n.setAttribute('cy',cursorPoint(event).y);
-                                                                  n.setAttribute('cx',cursorPoint(event).x);}
-                                                                  else {
-                                                                  n.setAttribute('y',cursorPoint(event).y);
-                                                                  n.setAttribute('x',cursorPoint(event).x);}
-                                                                  
-                                                                  n = n.nextSibling;} "))
-                                              (ana/transform-xml
-                                               [:svg]
-                                               #(ana/add-content % [:script js]))))})
+                                    (ana/emit
+                                     (ana/transform-xml
+                                      (ana/parse-xml-map pxml)
+                                      [:svg]
+                                      #(ana/add-content % [:g [:line {:id "arrow" :stroke "black"
+                                                                      :x1 "0" :y1 "0"
+                                                                      :x2 "100" :y2 "100"}]]))))
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body(.getDotSource gv)}
@@ -409,7 +424,7 @@ function cursorPoint(evt){
                                    "\n"))
                             nodes)))}
         "edit"
-        (html5
+        (xhtml
          [:head [:script {:src "/js/script.js"}]]
          [:body (edit-links (conj params {:format "cmapx" }))
           [:div
@@ -461,7 +476,9 @@ function cursorPoint(evt){
                   node
                   (when-let [weight (params :weight)] (str "/" weight))
                   "\"/>")
-             [:object {:data (str (base-path params) "/img/edit") :type "image/svg+xml" }])]])))))
+             (edit-links (assoc-in params [:format] "img")))]]
+         [:script {:type "text/javascript"} js])))))
+
 ;; define routes
 (defroutes webservice
   ;;links for editing

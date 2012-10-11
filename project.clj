@@ -1,12 +1,11 @@
 (defproject example "1.0.0-SNAPSHOT"
-  :description ""
-  :dependencies [[org.clojure/clojure "1.2.0"]
-		 [org.clojure/clojure-contrib "1.2.0"]
-		 [compojure "0.5.3"]
-		 [ring/ring-jetty-adapter "0.3.1"]
-		 [hiccup "0.3.6"]
+  :description "iasess prototype"
+  :dependencies [[org.clojure/clojure "1.3.0"]
+		 [compojure "1.1.3"]
+                 [org.clojars.pallix/analemma "1.0.0"]
+		 [ring "1.1.6"]
+		 [hiccup "1.0.1"]
                  [com.ashafa/clutch "0.3.1-SNAPSHOT"]]
-  :dev-dependencies [[lein-ring "0.4.5"]]
   :java-source-path  "java"
   :ring {:handler hello}
   :main hello)
