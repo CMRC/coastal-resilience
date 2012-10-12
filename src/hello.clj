@@ -299,12 +299,12 @@ document.body.addEventListener('mousedown',function(){
           nodes (:nodes (clutch/get-document (params :id)))]
       (.addln gv (.start_graph gv))
       (dorun (map #(.addln gv (str (first %) "[shape=box,"
-                                   (if (some #{(second %)} drivers) ",color=\"#ca0020\", style=filled")
-                                   (if (some #{(second %)} responses) ",color=\"#f4a582\", style=filled")
-                                   (if (some #{(second %)} pressures) ",color=\"#f7f7f7\", style=filled")
-                                   (if (some #{(second %)} impacts) ",color=\"#92c5de\", style=filled")
-                                   (if (some #{(second %)} state-changes) ",color=\"#0571b0\", style=filled")
-                                   ",label=\"" (second %) "\",target=\"_top\"];"))
+                                   (if (some #{(second %)} drivers) "color=\"#ca0020\", style=filled")
+                                   (if (some #{(second %)} responses) "color=\"#f4a582\", style=filled")
+                                   (if (some #{(second %)} pressures) "color=\"#f7f7f7\", style=filled")
+                                   (if (some #{(second %)} impacts) "color=\"#92c5de\", style=filled")
+                                   (if (some #{(second %)} state-changes) "color=\"#0571b0\", style=filled")
+                                   ",label=\"" (second %) "\"];"))
 
 
                   nodes))
@@ -314,7 +314,7 @@ document.body.addEventListener('mousedown',function(){
                      (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
                                      (display-weight w) "\",weight="
                                      (math/abs (url-weight w))
-                                     "color="
+                                     ",color="
                                      (if (> (url-weight w) 0) "blue" "red")
                                      "];"))) links))
       (when-let [tail (params :tail)]
@@ -361,7 +361,7 @@ document.body.addEventListener('mousedown',function(){
           nodes (:nodes doc)
           p(println params)]
       (case (params :mode)
-        "login"    (let [id (:_id (create-user (params :email)))]
+        "login"    (let [id (:_id (create-user (params "email")))]
                      {:status 303
                       :headers {"Location" (str "/resilience/" id "/mode/edit")}})
         "add"      (do
