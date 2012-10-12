@@ -198,7 +198,7 @@
                     "Coastal Access Points"
                     "Port and Marina Facilities"
                     "Marine Traffic"
-                    "Commuter Belts/Urban Sprawl"
+                    "Commuter Belts\n/Urban Sprawl"
                     "EROSION"
                     "COASTAL INUNDATION/FLOODING"
                     "DROUGHT"
@@ -265,6 +265,7 @@
 var svg   = document.getElementsByTagName('svg')[0];
 var svgNS = svg.getAttribute('xmlns');
 var pt    = svg.createSVGPoint();
+var fromElement;
 
 function cursorPoint(evt){
     pt.x = evt.clientX; pt.y = evt.clientY;
@@ -275,6 +276,8 @@ var onmove; // make inner closure available for unregistration
 document.body.addEventListener('mouseup',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node') {
     var mouseStart   = cursorPoint(e);
+    fromElement = e.target.parentNode.firstChild.firstChild.nodeValue;
+    e.target.parentNode.firstChild.nextSibling.setAttribute('fill-opacity','0');
     onmove = function(e){
       var current = cursorPoint(e);
       n = svg.getElementById('arrow');
@@ -287,8 +290,13 @@ document.body.addEventListener('mouseup',function(e){
   }
 },false);
 
-document.body.addEventListener('mousedown',function(){
-  document.body.removeEventListener('mousemove',onmove,false);
+document.body.addEventListener('mousedown',function(e){
+  if(e.target.parentNode.getAttribute('class') == 'node'
+     && fromElement) {
+    document.body.removeEventListener('mousemove',onmove,false);
+    //alert(fromElement + e.target.parentNode.firstChild.firstChild.nodeValue);
+    fromElement = null;
+  }
 },false);
 ")
 
@@ -298,15 +306,13 @@ document.body.addEventListener('mousedown',function(){
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))]
       (.addln gv (.start_graph gv))
-      (dorun (map #(.addln gv (str (first %) "[shape=box,"
-                                   (if (some #{(second %)} drivers) "color=\"#ca0020\", style=filled")
-                                   (if (some #{(second %)} responses) "color=\"#f4a582\", style=filled")
-                                   (if (some #{(second %)} pressures) "color=\"#f7f7f7\", style=filled")
-                                   (if (some #{(second %)} impacts) "color=\"#92c5de\", style=filled")
-                                   (if (some #{(second %)} state-changes) "color=\"#0571b0\", style=filled")
-                                   ",label=\"" (second %) "\"];"))
-
-
+      (dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=8,style=filled,"
+                                   (if (some #{(second %)} drivers) "color=\"#ca0020\"")
+                                   (if (some #{(second %)} responses) "color=\"#f4a582\"")
+                                   (if (some #{(second %)} pressures) "color=\"#f7f7f7\"")
+                                   (if (some #{(second %)} impacts) "color=\"#92c5de\"")
+                                   (if (some #{(second %)} state-changes) "color=\"#0571b0\"")
+                                   ",label=\"" (apply str (interpose "\\n" (clojure.string/split (second %) #" "))) "\"];"))
                   nodes))
       (if (and (params :node) (not (params :tail)))
         (.addln gv (str (params :node) "-> \"select target node\";\"select target node\"[id=\"selectnode\"];")))
