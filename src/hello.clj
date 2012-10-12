@@ -277,7 +277,11 @@ document.body.addEventListener('mouseup',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node') {
     var mouseStart   = cursorPoint(e);
     fromElement = e.target.parentNode.firstChild.firstChild.nodeValue;
-    //e.target.parentNode.firstChild.nextSibling.setAttribute('fill-opacity','0');
+    m = e.target.parentNode.firstChild;
+    while(m) {
+      if(m.tagName == 'ellipse') m.setAttribute('fill-opacity','0');
+      m = m.nextSibling;
+    }
     var n = document.createElementNS(svgNS,'line');
     n.setAttribute('stroke', 'black');
     n.setAttribute('id', 'arrow');
