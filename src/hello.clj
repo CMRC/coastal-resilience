@@ -295,7 +295,8 @@ document.body.addEventListener('mousedown',function(e){
      && fromElement) {
     document.body.removeEventListener('mousemove',onmove,false);
     //alert(fromElement + e.target.parentNode.firstChild.firstChild.nodeValue);
-    fromElement = null;
+    window.location.href = "/" + fromElement + "/" +
+      e.target.parentNode.firstChild.firstChild.nodeValue;
   }
 },false);
 ")
