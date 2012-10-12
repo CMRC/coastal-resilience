@@ -277,10 +277,17 @@ document.body.addEventListener('mouseup',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node') {
     var mouseStart   = cursorPoint(e);
     fromElement = e.target.parentNode.firstChild.firstChild.nodeValue;
-    e.target.parentNode.firstChild.nextSibling.setAttribute('fill-opacity','0');
+    //e.target.parentNode.firstChild.nextSibling.setAttribute('fill-opacity','0');
+    var n = document.createElementNS(svgNS,'line');
+    n.setAttribute('stroke', 'black');
+    n.setAttribute('id', 'arrow');
+    n.setAttribute('x1',mouseStart.x);
+    n.setAttribute('y1',mouseStart.y);
+    n.setAttribute('x2',mouseStart.x);
+    n.setAttribute('y2',mouseStart.y);
+    svg.appendChild(n);
     onmove = function(e){
       var current = cursorPoint(e);
-      n = svg.getElementById('arrow');
       n.setAttribute('x1',current.x);
       n.setAttribute('y1',current.y);
       n.setAttribute('x2',mouseStart.x);
@@ -294,9 +301,9 @@ document.body.addEventListener('mousedown',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node'
      && fromElement) {
     document.body.removeEventListener('mousemove',onmove,false);
-    //alert(fromElement + e.target.parentNode.firstChild.firstChild.nodeValue);
-    window.location.href = "/" + fromElement + "/" +
-      e.target.parentNode.firstChild.firstChild.nodeValue;
+    //svg.removeChild(document.getElementById('arrow');
+    window.location.href = 'edit/' +fromElement + '/' +
+      e.target.parentNode.firstChild.firstChild.nodeValue + '/1';
   }
 },false);
 ")
@@ -335,15 +342,8 @@ document.body.addEventListener('mousedown',function(e){
       (cond
        (= (params :format) "img") (let [graph (.getGraph gv (.getDotSource gv) "svg")
                                          in-stream (do
-                                                     (ByteArrayInputStream. graph))
-                                         pxml (xml/parse in-stream)]
-                                    (ana/emit
-                                     (ana/transform-xml
-                                      (ana/parse-xml-map pxml)
-                                      [:svg]
-                                      #(ana/add-content % [:g [:line {:id "arrow" :stroke "black"
-                                                                      :x1 "0" :y1 "0"
-                                                                      :x2 "100" :y2 "100"}]]))))
+                                                     (ByteArrayInputStream. graph))]
+                                    (slurp graph))
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body(.getDotSource gv)}
@@ -469,7 +469,8 @@ document.body.addEventListener('mousedown',function(e){
                       (submit-button "Add"))]]]
           [:div {:style "clear: both;margin: 20px"}
            (if-let [node (params :node)]
-             (str "<object data=\"" (base-path params) "/img/edit/"
+             (edit-links (assoc-in params [:format] "img"))
+             #_(str "<object data=\"" (base-path params) "/img/edit/"
                   (when-let [tail (params "tail")] (str tail "/"))
                   node
                   (when-let [weight (params :weight)] (str "/" weight))
