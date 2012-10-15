@@ -262,6 +262,7 @@
       (clutch/put-document {:user email}))))
 
 (def js "
+//view-source:http://phrogz.net/svg/drag_under_transformation.xhtml
 var svg   = document.getElementsByTagName('svg')[0];
 var svgNS = svg.getAttribute('xmlns');
 var pt    = svg.createSVGPoint();
@@ -279,7 +280,10 @@ document.body.addEventListener('mouseup',function(e){
     fromElement = e.target.parentNode.firstChild.firstChild.nodeValue;
     m = e.target.parentNode.firstChild;
     while(m) {
-      if(m.tagName == 'ellipse') m.setAttribute('fill-opacity','0');
+      if(m.tagName == 'ellipse') {
+        m.setAttribute('fill-opacity','0');
+        var elementStart = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
+      }
       m = m.nextSibling;
     }
     var n = document.createElementNS(svgNS,'line');
@@ -287,15 +291,18 @@ document.body.addEventListener('mouseup',function(e){
     n.setAttribute('id', 'arrow');
     n.setAttribute('x1',mouseStart.x);
     n.setAttribute('y1',mouseStart.y);
-    n.setAttribute('x2',mouseStart.x);
-    n.setAttribute('y2',mouseStart.y);
-    svg.appendChild(n);
+    n.setAttribute('x2',elementStart.x);
+    n.setAttribute('y2',elementStart.y);
+    g = document.getElementById('graph1');
+    g.insertBefore(n,svg.getElementById('node1'));
     onmove = function(e){
       var current = cursorPoint(e);
-      n.setAttribute('x1',current.x);
-      n.setAttribute('y1',current.y);
-      n.setAttribute('x2',mouseStart.x);
-      n.setAttribute('y2',mouseStart.y);
+      pt.x = current.x - mouseStart.x;
+      pt.y = current.y - mouseStart.y;
+      n.setAttribute('x1',elementStart.x+pt.x);
+      n.setAttribute('y1',elementStart.y+pt.y);
+      n.setAttribute('x2',elementStart.x);
+      n.setAttribute('y2',elementStart.y);
     };
     document.body.addEventListener('mousemove',onmove,false);
   }
@@ -305,10 +312,10 @@ document.body.addEventListener('mousedown',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node'
      && fromElement) {
     document.body.removeEventListener('mousemove',onmove,false);
-    //svg.removeChild(document.getElementById('arrow');
-    window.location.href = 'edit/' +fromElement + '/' +
+    window.location = window.location + '/' +fromElement + '/' +
       e.target.parentNode.firstChild.firstChild.nodeValue + '/1';
   }
+  return false;
 },false);
 ")
 
@@ -318,7 +325,7 @@ document.body.addEventListener('mousedown',function(e){
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))]
       (.addln gv (.start_graph gv))
-      (dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=8,style=filled,"
+      (dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=10,style=filled,"
                                    (if (some #{(second %)} drivers) "color=\"#ca0020\"")
                                    (if (some #{(second %)} responses) "color=\"#f4a582\"")
                                    (if (some #{(second %)} pressures) "color=\"#f7f7f7\"")
