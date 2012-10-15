@@ -281,13 +281,12 @@ document.body.addEventListener('mouseup',function(e){
     m = e.target.parentNode.firstChild;
     while(m) {
       if(m.tagName == 'ellipse') {
-        m.setAttribute('fill-opacity','0');
+        m.setAttribute('fill','white');
         var elementStart = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
       }
       m = m.nextSibling;
     }
     var n = document.createElementNS(svgNS,'line');
-    n.setAttribute('stroke', 'black');
     n.setAttribute('id', 'arrow');
     n.setAttribute('x1',mouseStart.x);
     n.setAttribute('y1',mouseStart.y);
@@ -303,6 +302,7 @@ document.body.addEventListener('mouseup',function(e){
       n.setAttribute('y1',elementStart.y+pt.y);
       n.setAttribute('x2',elementStart.x);
       n.setAttribute('y2',elementStart.y);
+      n.setAttribute('stroke', 'black');
     };
     document.body.addEventListener('mousemove',onmove,false);
   }
