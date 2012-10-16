@@ -265,16 +265,18 @@
 //view-source:http://phrogz.net/svg/drag_under_transformation.xhtml
 var svg   = document.getElementsByTagName('svg')[0];
 var svgNS = svg.getAttribute('xmlns');
+var xlinkNS = 'http://www.w3.org/1999/xlink';
 var pt    = svg.createSVGPoint();
 var fromElement;
+var g = document.getElementById('graph1');
 
 function cursorPoint(evt){
     pt.x = evt.clientX; pt.y = evt.clientY;
     return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
-var onmove; // make inner closure available for unregistration
-document.body.addEventListener('mouseup',function(e){
+var onmove;
+var onmouseup = function(e){
   if(e.target.parentNode.getAttribute('class') == 'node') {
     var mouseStart   = cursorPoint(e);
     fromElement = e.target.parentNode.firstChild.firstChild.nodeValue;
@@ -288,11 +290,11 @@ document.body.addEventListener('mouseup',function(e){
     }
     var n = document.createElementNS(svgNS,'line');
     n.setAttribute('id', 'arrow');
-    n.setAttribute('x1',mouseStart.x);
-    n.setAttribute('y1',mouseStart.y);
+    n.setAttribute('x1',elementStart.x);
+    n.setAttribute('y1',elementStart.y);
     n.setAttribute('x2',elementStart.x);
     n.setAttribute('y2',elementStart.y);
-    g = document.getElementById('graph1');
+    n.setAttribute('stroke', 'black');
     g.insertBefore(n,svg.getElementById('node1'));
     onmove = function(e){
       var current = cursorPoint(e);
@@ -302,18 +304,49 @@ document.body.addEventListener('mouseup',function(e){
       n.setAttribute('y1',elementStart.y+pt.y);
       n.setAttribute('x2',elementStart.x);
       n.setAttribute('y2',elementStart.y);
-      n.setAttribute('stroke', 'black');
     };
     document.body.addEventListener('mousemove',onmove,false);
   }
-},false);
+}
+
+document.body.addEventListener('mouseup',onmouseup,false);
 
 document.body.addEventListener('mousedown',function(e){
   if(e.target.parentNode.getAttribute('class') == 'node'
      && fromElement) {
     document.body.removeEventListener('mousemove',onmove,false);
-    window.location = window.location + '/' +fromElement + '/' +
+    document.body.removeEventListener('mouseup',onmouseup,false);
+    m = e.target.parentNode.firstChild;
+    while(m) {
+      if(m.tagName == 'ellipse') {
+        var endPos = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
+      }
+      m = m.nextSibling;
+    }
+    var url = 'save/' + fromElement + '/' +
       e.target.parentNode.firstChild.firstChild.nodeValue + '/1';
+    var link = document.createElementNS(svgNS,'a');
+    link.setAttributeNS(xlinkNS,'href',url);
+    link.setAttributeNS(xlinkNS,'title','medium');
+    var menu = document.createElementNS(svgNS,'text');
+    var menubg = document.createElementNS(svgNS,'rect');
+    var medium = document.createTextNode('M');
+    menu.setAttribute('x',endPos.x+36);
+    menu.setAttribute('y',endPos.y);
+    menu.setAttribute('text-anchor','middle');
+    menubg.setAttribute('x',endPos.x+29);
+    menubg.setAttribute('y',endPos.y+17);
+    menubg.setAttribute('fill','white');
+    menubg.setAttribute('width',30);
+    menubg.setAttribute('height',10);
+    
+    menu.appendChild(medium);
+    link.appendChild(menubg);
+    link.appendChild(menu);
+    g.appendChild(link);
+    fromElement = null;
+    //window.location = window.location + '/' +fromElement + '/' +
+      //e.target.parentNode.firstChild.firstChild.nodeValue + '/1';
   }
   return false;
 },false);
