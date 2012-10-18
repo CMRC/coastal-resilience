@@ -264,11 +264,10 @@
 
 (defn edit-links [params]
   (clutch/with-db db
-    (let [gv (GraphViz.)
-          links (:links (clutch/get-document (params :id)))
-          nodes (:nodes (clutch/get-document (params :id)))]
-      (.addln gv (.start_graph gv))
-      (dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=10,style=filled,"
+    (let [links (:links (clutch/get-document (params :id)))
+          nodes (:nodes (clutch/get-document (params :id)))
+          nodes-graph (concat (apply map (vector (second %)) nodes))]
+      #_(dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=10,style=filled,"
                                    (if (some #{(second %)} drivers) "color=\"#ca0020\"")
                                    (if (some #{(second %)} responses) "color=\"#f4a582\"")
                                    (if (some #{(second %)} pressures) "color=\"#f7f7f7\"")
@@ -294,7 +293,7 @@
                         "/" (inc-weight (params :weight)) "\",weight=0,color=blue,style=dashed]")))
       (.addln gv (.end_graph gv))
       (cond
-       (= (params :format) "img") (render (.getDotSource gv) {:format :svg})
+       (= (params :format) "img") (render (dot (graph(nodes-graph))) {:format :svg})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body(.getDotSource gv)}
