@@ -264,43 +264,32 @@
 
 (defn edit-links [params]
   (clutch/with-db db
-    (let [links (:links (clutch/get-document (params :id)))
+    (let [g []
+          links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))
-          nodes-graph (concat (apply map (vector (second %)) nodes))]
-      #_(dorun (map #(.addln gv (str (first %) "[shape=circle,width=1,fixedsize=true,fontsize=10,style=filled,"
-                                   (if (some #{(second %)} drivers) "color=\"#ca0020\"")
-                                   (if (some #{(second %)} responses) "color=\"#f4a582\"")
-                                   (if (some #{(second %)} pressures) "color=\"#f7f7f7\"")
-                                   (if (some #{(second %)} impacts) "color=\"#92c5de\"")
-                                   (if (some #{(second %)} state-changes) "color=\"#0571b0\"")
-                                   ",label=\"" (apply str (interpose "\\n" (clojure.string/split (second %) #" "))) "\"];"))
-                  nodes))
-      (if (and (params :node) (not (params :tail)))
-        (.addln gv (str (params :node) "-> \"select target node\";\"select target node\"[id=\"selectnode\"];")))
-      (dorun (map #(let [w (:weight (get links (keyword (str (:head (val %)) (:tail (val %))))))]
-                     (.addln gv (str (:tail (val %)) "->" (:head (val %)) "[label=\""
-                                     (display-weight w) "\",weight="
-                                     (math/abs (url-weight w))
-                                     ",color="
-                                     (if (> (url-weight w) 0) "blue" "red")
-                                     "];"))) links))
-      (when-let [tail (params :tail)]
-        (.addln gv (str tail "->" (params :node)
-                        "[target=\"_top\",label=\"" (display-weight (params :weight)) "\",URL=\""
-                        (base-path params) "/mode/edit/"
-                        tail "/"
-                        (params :node)
-                        "/" (inc-weight (params :weight)) "\",weight=0,color=blue,style=dashed]")))
-      (.addln gv (.end_graph gv))
+          nodes-graph (reduce #(into %1 [[(first %2) {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                                      :shape :circle
+                                                      :width "1"
+                                                      :fixedsize :true
+                                                      :fontsize "10"
+                                                      :style :filled
+                                                      :color
+                                                      (if (some #{(second %2)} drivers) "#ca0020"
+                                                          (if (some #{(second %2)} responses) "#f4a582"
+                                                              (if (some #{(second %2)} pressures) "#f7f7f7"
+                                                                  (if (some #{(second %2)} impacts) "#92c5de"
+                                                                      (if (some #{(second %2)} state-changes) "#0571b0"
+                                                                          "white")))))}]]) g nodes)
+          links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
+                                 (into %1 [[(:tail (val %2)) (:head (val %2)) {:label (display-weight w)
+                                                                               :weight (str (math/abs (url-weight w)))
+                                                                               :color (if (> (url-weight w) 0) "blue" "red")}]]))
+                              nodes-graph links)]
       (cond
-       (= (params :format) "img") (render (dot (graph(nodes-graph))) {:format :svg})
+       (= (params :format) "img") (render (dot (digraph links-graph)) {:format :svg})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
-                                     :body(.getDotSource gv)}
-       (= (params :format) "cmapx") {:status 200	 
-                                      :headers {"Content-Type" "txt"}
-                                      :body(String. (.getGraph gv (.getDotSource gv) "cmapx"))}))))
-
+                                     :body (dot (digraph links-graph))}))))
 (defn save-views []
   (clutch/with-db db
     (clutch/save-view "users"
