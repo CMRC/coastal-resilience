@@ -1,7 +1,7 @@
 (ns hello-world
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
         hiccup.core, hiccup.form, hiccup.page
-        com.ashafa.clutch.view-server)
+        com.ashafa.clutch.view-server dorothy.core)
   (:require [compojure.route :as route]
             [clojure.xml :as xml] 
             [clojure.contrib.string :as str] 
@@ -294,10 +294,7 @@
                         "/" (inc-weight (params :weight)) "\",weight=0,color=blue,style=dashed]")))
       (.addln gv (.end_graph gv))
       (cond
-       (= (params :format) "img") (let [graph (.getGraph gv (.getDotSource gv) "svg")
-                                         in-stream (do
-                                                     (ByteArrayInputStream. graph))]
-                                    (slurp graph))
+       (= (params :format) "img") (render (.getDotSource gv) {:format :svg})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body(.getDotSource gv)}
