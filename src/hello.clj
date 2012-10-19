@@ -111,32 +111,40 @@
 
 (defn edit-links [params]
   (clutch/with-db db
-    (let [g []
+    (let [g {}
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))
-          nodes-graph (reduce #(into %1 [[(first %2) {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                                      :shape :circle
-                                                      :width "1"
-                                                      :fixedsize :true
-                                                      :fontsize "10"
-                                                      :style :filled
-                                                      :color
-                                                      (if (some #{(second %2)} drivers) "#ca0020"
-                                                          (if (some #{(second %2)} responses) "#f4a582"
-                                                              (if (some #{(second %2)} pressures) "#f7f7f7"
-                                                                  (if (some #{(second %2)} impacts) "#92c5de"
-                                                                      (if (some #{(second %2)} state-changes) "#0571b0"
-                                                                          "white")))))}]]) g nodes)
+          nodes-graph (reduce
+                       #(assoc-in %1 [:drivers (first %2)]
+                                  {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                   :shape :circle
+                                   :width "1"
+                                   :fixedsize :true
+                                   :fontsize "10"
+                                   :style :filled
+                                   :color
+                                   (if (some #{(second %2)} drivers) "#ca0020"
+                                       (if (some #{(second %2)} responses) "#f4a582"
+                                           (if (some #{(second %2)} pressures) "#f7f7f7"
+                                               (if (some #{(second %2)} impacts) "#92c5de"
+                                                   (if (some #{(second %2)} state-changes) "#0571b0"
+                                                       "white")))))})
+                       g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
-                                 (into %1 [[(:tail (val %2)) (:head (val %2)) {:label (display-weight w)
-                                                                               :weight (str (math/abs (url-weight w)))
-                                                                               :color (if (> (url-weight w) 0) "blue" "red")}]]))
-                              nodes-graph links)]
+                                 (assoc-in %1 [:drivers [(:tail (val %2)) (:head (val %2))]]
+                                           {:label (display-weight w)
+                                            :weight (str (math/abs (url-weight w)))
+                                            :color (if (> (url-weight w) 0) "blue" "red")}))
+                              {} links)
+          nodes-subgraph (into [] (for [[k v] (:drivers nodes-graph)] [k v]))
+          links-subgraph (into [] (for [[[j k] v] (:drivers links-graph)] [(keyword j) (keyword k) v]))
+          dot-out (dot (digraph [(subgraph :drivers (concat links-subgraph nodes-subgraph))]))]
       (cond
-       (= (params :format) "img") (render (dot (digraph links-graph)) {:format :svg})
+       (= (params :format) "img") (render dot-out {:format :svg})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
-                                     :body (dot (digraph links-graph))}))))
+                                     :body dot-out}))))
+
 (defn save-views []
   (clutch/with-db db
     (clutch/save-view "users"
