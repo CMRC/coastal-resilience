@@ -45,7 +45,7 @@
                     "Coastal Access Points"
                     "Port and Marina Facilities"
                     "Marine Traffic"
-                    "Commuter Belts\n/Urban Sprawl"
+                    "Commuter Belts /Urban Sprawl"
                     "EROSION"
                     "COASTAL INUNDATION/FLOODING"
                     "DROUGHT"
@@ -115,30 +115,64 @@
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))
           nodes-graph (reduce
-                       #(assoc-in %1 [:drivers (first %2)]
-                                  {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                   :shape :circle
-                                   :width "1"
-                                   :fixedsize :true
-                                   :fontsize "10"
-                                   :style :filled
-                                   :color
-                                   (if (some #{(second %2)} drivers) "#ca0020"
-                                       (if (some #{(second %2)} responses) "#f4a582"
-                                           (if (some #{(second %2)} pressures) "#f7f7f7"
-                                               (if (some #{(second %2)} impacts) "#92c5de"
-                                                   (if (some #{(second %2)} state-changes) "#0571b0"
-                                                       "white")))))})
+                       #(if (some #{(second %2)} drivers)
+                          (assoc-in %1 [:drivers (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "#ca0020"})
+                          (if (some #{(second %2)} responses)
+                            (assoc-in %1 [:responses (first %2)]
+                                      {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                       :shape :circle
+                                       :width "1"
+                                       :fixedsize :true
+                                       :fontsize "10"
+                                       :style :filled
+                                       :color "#f4a582"})
+                            (if (some #{(second %2)} pressures) 
+                              (assoc-in %1 [:pressures (first %2)]
+                                        {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                         :shape :circle
+                                         :width "1"
+                                         :fixedsize :true
+                                         :fontsize "10"
+                                         :style :filled
+                                         :color"#f7f7f7"})
+                              (if (some #{(second %2)} impacts) 
+                                (assoc-in %1 [:impacts (first %2)]
+                                          {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                           :shape :circle
+                                           :width "1"
+                                           :fixedsize :true
+                                           :fontsize "10"
+                                           :style :filled
+                                           :color"#92c5de"})
+                                (if (some #{(second %2)} state-changes) 
+                                  (assoc-in %1 [:state-changes (first %2)]
+                                            {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                             :shape :circle
+                                             :width "1"
+                                             :fixedsize :true
+                                             :fontsize "10"
+                                             :style :filled
+                                             :color"#0571b0"}))))))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
-                                 (assoc-in %1 [:drivers [(:tail (val %2)) (:head (val %2))]]
+                                 (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
                                            {:label (display-weight w)
                                             :weight (str (math/abs (url-weight w)))
                                             :color (if (> (url-weight w) 0) "blue" "red")}))
                               {} links)
-          nodes-subgraph (into [] (for [[k v] (:drivers nodes-graph)] [k v]))
-          links-subgraph (into [] (for [[[j k] v] (:drivers links-graph)] [(keyword j) (keyword k) v]))
-          dot-out (dot (digraph [(subgraph :drivers (concat links-subgraph nodes-subgraph))]))]
+          nodes-subgraph (fn [node-type] (cons {:rank :same}
+                                               (into [] (for [[k v] (node-type nodes-graph)] [k v]))))
+          links-subgraph (into [] (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
+          dot-out (dot (digraph (apply vector (concat (map #(subgraph % (nodes-subgraph %))
+                                                          [:drivers :responses :pressures :impacts :state-changes])
+                                                      links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg})
        (= (params :format) "dot")   {:status 200	 
