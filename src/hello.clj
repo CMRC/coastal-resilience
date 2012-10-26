@@ -162,10 +162,13 @@
                                              :color"#0571b0"}))))))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
-                                 (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
-                                           {:label (display-weight w)
-                                            :weight (str (math/abs (url-weight w)))
-                                            :color (if (> (url-weight w) 0) "blue" "red")}))
+                                 (if (and (nodes (keyword (:head (val %2))))
+                                            (nodes (keyword (:tail (val %2)))))
+                                   (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
+                                             {:label (display-weight w)
+                                              :weight (str (math/abs (url-weight w)))
+                                              :color (if (> (url-weight w) 0) "blue" "red")})
+                                   %1))
                               {} links)
           nodes-subgraph (fn [node-type] (cons {:rank :same}
                                                (into [] (for [[k v] (node-type nodes-graph)] [k v]))))
@@ -204,6 +207,12 @@
                       (merge doc
                              {:nodes (merge nodes
                                             {(encode-nodename (params "element")) (params "element")})}))
+                     {:status 303
+                      :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "delete"   (do
+                     (clutch/update-document
+                      (merge doc
+                             {:nodes (dissoc nodes (keyword (str (params :node))))}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "save"     (do (if (= (params :weight) "3") ;;maps to zero
