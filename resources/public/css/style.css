@@ -1,0 +1,15 @@
+.menu li {
+    list-style: none;
+}
+.menu li a {
+    text-decoration: none;
+    background-color: #7CB7C6;
+    border-style: outset;
+    color: white;
+    display: block;
+}
+.menu li a:active,
+.menu li a:hover {
+    border-style: inset;
+    background-color: #DCD8C2;
+}
