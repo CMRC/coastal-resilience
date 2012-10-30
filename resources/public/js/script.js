@@ -26,6 +26,11 @@ document.body.addEventListener('click',function(e){
 		}
 		m = m.nextSibling;
 	    }
+	    var menu = document.createElementNS(xhtmlNS,'ul');
+	    menu.style.left = e.clientX + 'px';
+	    menu.style.top = e.clientY + 'px';
+	    menu.style.position = 'absolute';
+	    menu.setAttribute('class','menu');
 	    var j=0;
             [{strength:'S+',index:6},
 	     {strength:'M+',index:5},
@@ -37,30 +42,17 @@ document.body.addEventListener('click',function(e){
 		 function(el) {
 		     var url = 'save/' + fromNode + '/' +
 			 e.target.parentNode.firstChild.firstChild.nodeValue + '/' + el["index"];
-		     var link = document.createElementNS(svgNS,'a');
-		     link.setAttributeNS(xlinkNS,'href',url);
-		     link.setAttributeNS(xlinkNS,'title',el["strength"]);
-		     var menu = document.createElementNS(svgNS,'text');
-		     var menubg = document.createElementNS(svgNS,'rect');
-		     var medium = document.createTextNode(el["strength"]);
-                     var height = 24;
-                     var width = 60;
-		     menu.setAttribute('x',endPos.x+width/2);
-		     menu.setAttribute('y',endPos.y+height/2+height*j);
-		     menu.setAttribute('text-anchor','middle');
-		     menubg.setAttribute('x',endPos.x);
-		     menubg.setAttribute('y',endPos.y+height*j);
-		     menubg.setAttribute('fill','white');
-		     menubg.setAttribute('stroke','black');
-		     menubg.setAttribute('width',width);
-		     menubg.setAttribute('height',height);
+		     var link = document.createElementNS(xhtmlNS,'a');
+		     link.setAttribute('href',url);
+		     var menuitem = document.createElementNS(xhtmlNS,'li');
+		     var strength = document.createTextNode(el["strength"]);
 		     
-		     menu.appendChild(medium);
-		     link.appendChild(menubg);
-		     link.appendChild(menu);
-		     g.appendChild(link);
+		     link.appendChild(strength);
+		     menuitem.appendChild(link);
+		     menu.appendChild(menuitem);
 		     ++j;
 		 });
+	    document.body.appendChild(menu);
 	    fromNode = null;
 	}
 	else {
@@ -81,7 +73,7 @@ document.body.addEventListener('click',function(e){
 	    n.setAttribute('x2',elementStart.x);
 	    n.setAttribute('y2',elementStart.y);
 	    n.setAttribute('stroke', 'black');
-	    g.insertBefore(n,svg.getElementById('node1'));
+	    g.insertBefore(n,svg.querySelectorAll('.node')[0]);
 	    onmove = function(e){
 		var current = cursorPoint(e);
 		pt.x = current.x - mouseStart.x;
@@ -103,21 +95,16 @@ document.body.addEventListener('contextmenu',function(e){
 	var deleteurl = 'delete/' + e.target.parentNode.firstChild.firstChild.nodeValue;
 	var deletelink = document.createElementNS(xhtmlNS,'a');
 	deletelink.setAttribute('href',deleteurl);
-	var deletewrapper = document.createElementNS(svgNS,'foreignObject');
-	deletewrapper.setAttribute('x',cursorPoint(e).x);
-	deletewrapper.setAttribute('y',cursorPoint(e).y);
-	deletewrapper.setAttribute('width','300em');
-	deletewrapper.setAttribute('height','1em');
 	var deletemenu = document.createElementNS(xhtmlNS,'ul');
 	deletemenu.style.left = e.clientX + 'px';
 	deletemenu.style.top = e.clientY + 'px';
 	deletemenu.style.position = 'absolute';
+	deletemenu.setAttribute('class','menu');
 	var deleteitem = document.createElementNS(xhtmlNS,'li');
-	var deletetext = document.createTextNode('X');
+	var deletetext = document.createTextNode('Delete');
 	deletelink.appendChild(deletetext);
 	deleteitem.appendChild(deletelink);
 	deletemenu.appendChild(deleteitem);
-	deletewrapper.appendChild(deletemenu);
 	document.body.appendChild(deletemenu);
     }
     e.preventDefault();

@@ -172,9 +172,9 @@
                               {} links)
           nodes-subgraph (fn [node-type] (cons {:rank :same}
                                                (into [] (for [[k v] (node-type nodes-graph)] [k v]))))
-          links-subgraph (into [] (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
+          links-subgraph (into [{:splines :polyline}] (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat (map #(subgraph % (nodes-subgraph %))
-                                                          [:drivers :responses :pressures :impacts :state-changes])
+                                                           [:drivers :responses :pressures :impacts :state-changes])
                                                       links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg})
@@ -260,7 +260,9 @@
                             nodes)))}
         "edit"
         (xhtml
-         [:head [:script {:src "/js/script.js"}]]
+         [:head
+          [:script {:src "/js/script.js"}]
+          [:style {:type "text/css"} "@import \"/css/style.css\";"]]
          [:body (edit-links (conj params {:format "cmapx" }))
           [:div
            [:div {:style "clear: both;margin: 20px"}
