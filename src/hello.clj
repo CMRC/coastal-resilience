@@ -13,7 +13,7 @@
                      URLDecoder
                      URL)))
 
-;;(clutch/configure-view-server "resilience" (view-server-exec-string))
+(clutch/configure-view-server "resilience" (view-server-exec-string))
 
 (def db "resilience")
 (def lowlight "grey")
@@ -111,7 +111,8 @@
 
 (defn edit-links [params]
   (clutch/with-db db
-    (let [g {}
+    (let [node-types [:drivers :responses :pressures :impacts :state-changes]
+          g {}
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))
           nodes-graph (reduce
@@ -167,15 +168,27 @@
                                    (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
                                              {:label (display-weight w)
                                               :weight (str (math/abs (url-weight w)))
-                                              :color (if (> (url-weight w) 0) "blue" "red")})
+                                              :color (if (> (url-weight w) 0) "blue" "red")
+                                              :constraint :false})
                                    %1))
                               {} links)
-          nodes-subgraph (fn [node-type] (cons {:rank :same}
+          nodes-subgraph (fn [node-type] (cons {}
                                                (into [] (for [[k v] (node-type nodes-graph)] [k v]))))
-          links-subgraph (into [{:splines :polyline}] (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
-          dot-out (dot (digraph (apply vector (concat (map #(subgraph % (nodes-subgraph %))
-                                                           [:drivers :responses :pressures :impacts :state-changes])
-                                                      links-subgraph))))]
+          nodenames (fn [node-type] (into [] (for [[k v] (node-type nodes-graph)] k)))
+          p (println (nodenames :drivers))
+          links-subgraph (into [{:splines :true}]
+                               (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
+          dot-out (dot (digraph (apply vector (concat
+                                               (map #(vector % {:style :invis}) node-types)
+                                               [(conj node-types {:style :invis})]
+                                               (map #(subgraph % (nodes-subgraph %)) node-types)
+                                               (reduce ;;links from node-type names to each node of that type
+                                                (fn [nts nt]
+                                                  (reduce
+                                                   (fn [m v] (cons [nt v {:style :invis}] m))
+                                                   nts
+                                                   (nodenames nt))) [] node-types)
+                                               links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg})
        (= (params :format) "dot")   {:status 200	 
@@ -234,13 +247,13 @@
                         :headers {"Location" (str (base-path params) "/mode/edit")}})
         "download" 
         {:status 200
-         :headers {"Content-Type" "text/csv"
-                   "Content-Disposition" "attachment;filename=matrix.csv"}
-         :body (str "," (apply str (map #(str (second %) \,) nodes)) "\n"     ;;header row
+         :headers {"Content-Type" "text/tab-separated-values"
+                   "Content-Disposition" "attachment;filename=matrix.tsv"}
+         :body (str "\t" (apply str (map #(str (second %) "\t") nodes)) "\n"     ;;header row
                     (apply str                                               
                            (map                                               ;;value rows
                             (fn [tail]                                        ;;each elem as a potential tail
-                              (str (second tail) \,                           ;;elem name at start of row
+                              (str (second tail) "\t"                           ;;elem name at start of row
                                    (apply str
                                           (map                                ;;each elem as a potential head
                                            (fn [head]
@@ -254,7 +267,7 @@
                                                      (:weight (get links (keyword
                                                                           (str (name (first head))
                                                                                (name (first tail)))))))
-                                                    "0.0") \,))               ;;no link, =zero
+                                                    "0.0") "\t"))               ;;no link, =zero
                                            nodes))
                                    "\n"))
                             nodes)))}
@@ -327,6 +340,7 @@
   (GET "/resilience/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
   (GET "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
   (POST "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
+  (POST "/resilience/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
   (GET "/resilience/:id/mode/:mode/:node" {params :params} (edit-links-html params))
   (GET "/resilience/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
   (GET "/resilience/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
