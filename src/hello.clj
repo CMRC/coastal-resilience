@@ -179,8 +179,6 @@
           links-subgraph (into [{:splines :true}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
-                                               (map #(vector % {:style :invis}) node-types)
-                                               [(conj node-types {:style :invis})]
                                                (map #(subgraph % (nodes-subgraph %)) node-types)
                                                (reduce ;;links from node-type names to each node of that type
                                                 (fn [nts nt]
@@ -188,6 +186,8 @@
                                                    (fn [m v] (cons [nt v {:style :invis}] m))
                                                    nts
                                                    (nodenames nt))) [] node-types)
+                                               (map #(vector % {:style :invis}) (conj node-types :end))
+                                               [(conj node-types :end {:style :invis :weight "100"})]
                                                links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg})
