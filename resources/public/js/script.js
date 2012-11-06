@@ -61,7 +61,10 @@ document.body.addEventListener('click',function(e){
 	    m = e.target.parentNode.firstChild;
 	    while(m) {
 		if(m.tagName == 'ellipse') {
-		    m.setAttribute('fill','white');
+		    var oldFill = m.getAttribute('fill');
+		    var oldStroke = m.getAttribute('stroke');
+		    m.setAttribute('fill',oldStroke);
+		    m.setAttribute('stroke',oldFill);
 		    var elementStart = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
 		}
 		m = m.nextSibling;
@@ -110,3 +113,35 @@ document.body.addEventListener('contextmenu',function(e){
     e.preventDefault();
     return false;
 },false)
+
+
+document.body.addEventListener('mouseover',function(e){
+    if(fromNode && e.target.parentNode.getAttribute('class') == 'node') {
+	m = e.target.parentNode.firstChild;
+	while(m) {
+	    if(m.tagName == 'ellipse') {
+		var oldFill = m.getAttribute('fill');
+		var oldStroke = m.getAttribute('stroke');
+		m.setAttribute('fill',oldStroke);
+		m.setAttribute('stroke',oldFill);
+	    }
+	    m = m.nextSibling;
+	}
+    }
+},false);
+
+document.body.addEventListener('mouseout',function(e){
+    if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
+       && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
+	m = e.target.parentNode.firstChild;
+	while(m) {
+	    if(m.tagName == 'ellipse') {
+		var oldFill = m.getAttribute('fill');
+		var oldStroke = m.getAttribute('stroke');
+		m.setAttribute('fill',oldStroke);
+		m.setAttribute('stroke',oldFill);
+	    }
+	    m = m.nextSibling;
+	}
+    }
+},false);

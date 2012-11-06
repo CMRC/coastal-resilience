@@ -13,3 +13,6 @@
     border-style: inset;
     background-color: #DCD8C2;
 }
+.node ellipse {
+    ##fill: lightslategrey;
+}

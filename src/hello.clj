@@ -13,7 +13,7 @@
                      URLDecoder
                      URL)))
 
-(clutch/configure-view-server "resilience" (view-server-exec-string))
+#_(clutch/configure-view-server "resilience" (view-server-exec-string))
 
 (def db "resilience")
 (def lowlight "grey")
@@ -76,7 +76,7 @@
                     "Flood Protection: Storm surge/Tidal/Fluvial"
                     "Sea-Level Rise Buffering"
                     "Raw Material Provision"
-                    "Fresh Water Supply "
+                    "Fresh Water Supply"
                     "Marine Transport and Navigation"
                     "Coastal Amenity: Leisure/Recreation"
                     "Habitable Land: Secure Coastal Development"
@@ -124,7 +124,8 @@
                                      :fixedsize :true
                                      :fontsize "10"
                                      :style :filled
-                                     :color "#ca0020"})
+                                     :color "#ca0020"
+                                     :fillcolor "white"})
                           (if (some #{(second %2)} responses)
                             (assoc-in %1 [:responses (first %2)]
                                       {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
@@ -133,7 +134,8 @@
                                        :fixedsize :true
                                        :fontsize "10"
                                        :style :filled
-                                       :color "#f4a582"})
+                                       :color "#f4a582"
+                                       :fillcolor "white"})
                             (if (some #{(second %2)} pressures) 
                               (assoc-in %1 [:pressures (first %2)]
                                         {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
@@ -142,7 +144,8 @@
                                          :fixedsize :true
                                          :fontsize "10"
                                          :style :filled
-                                         :color"#f7f7f7"})
+                                         :color"#f7f7f7"
+                                         :fillcolor "white"})
                               (if (some #{(second %2)} impacts) 
                                 (assoc-in %1 [:impacts (first %2)]
                                           {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
@@ -151,7 +154,8 @@
                                            :fixedsize :true
                                            :fontsize "10"
                                            :style :filled
-                                           :color"#92c5de"})
+                                           :color"#92c5de"
+                                           :fillcolor "white"})
                                 (if (some #{(second %2)} state-changes) 
                                   (assoc-in %1 [:state-changes (first %2)]
                                             {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
@@ -160,37 +164,42 @@
                                              :fixedsize :true
                                              :fontsize "10"
                                              :style :filled
-                                             :color"#0571b0"}))))))
+                                             :color"#0571b0"
+                                             :fillcolor "white"}))))))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
                                  (if (and (nodes (keyword (:head (val %2))))
                                             (nodes (keyword (:tail (val %2)))))
                                    (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
-                                             {:label (display-weight w)
+                                             {:tooltip (display-weight w)
                                               :weight (str (math/abs (url-weight w)))
+                                              :penwidth (str (math/abs (url-weight w)))
                                               :color (if (> (url-weight w) 0) "blue" "red")
-                                              :constraint :false})
+                                              :constraint :false
+                                              :head_lp "10,10"})
                                    %1))
                               {} links)
-          nodes-subgraph (fn [node-type] (cons {}
-                                               (into [] (for [[k v] (node-type nodes-graph)] [k v]))))
-          nodenames (fn [node-type] (into [] (for [[k v] (node-type nodes-graph)] k)))
-          p (println (nodenames :drivers))
-          links-subgraph (into [{:splines :true}]
+          nodes-subgraph (fn [node-type] (into [] (for [[k v] (node-type nodes-graph)] [k v])))
+          links-subgraph (into [{:splines :true :size "24,9" :ranksep "1.2" :stylesheet "/css/style.css"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
-                                               (map #(subgraph % (nodes-subgraph %)) node-types)
+                                               (reduce ;;draw nodes
+                                                (fn [nts nt]
+                                                  (reduce
+                                                   (fn [m v] (cons v m))
+                                                   nts
+                                                   (nodes-subgraph nt))) [] node-types)
+                                               links-subgraph
+                                               (map #(vector % {:style :invis}) (conj node-types :end))
                                                (reduce ;;links from node-type names to each node of that type
                                                 (fn [nts nt]
                                                   (reduce
-                                                   (fn [m v] (cons [nt v {:style :invis}] m))
+                                                   (fn [m v] (cons [nt (first v) {:style :invis}] m))
                                                    nts
-                                                   (nodenames nt))) [] node-types)
-                                               (map #(vector % {:style :invis}) (conj node-types :end))
-                                               [(conj node-types :end {:style :invis :weight "100"})]
-                                               links-subgraph))))]
+                                                   (nodes-subgraph nt))) [] node-types)
+                                               [(conj node-types :end {:style :invis :weight "3"})]))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg})
+       (= (params :format) "img") (render dot-out {:format :svg :layout :dot})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
