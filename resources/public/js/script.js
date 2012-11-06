@@ -116,7 +116,8 @@ document.body.addEventListener('contextmenu',function(e){
 
 
 document.body.addEventListener('mouseover',function(e){
-    if(fromNode && e.target.parentNode.getAttribute('class') == 'node') {
+    if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
+       && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
 	m = e.target.parentNode.firstChild;
 	while(m) {
 	    if(m.tagName == 'ellipse') {

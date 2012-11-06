@@ -124,7 +124,7 @@
                                      :fixedsize :true
                                      :fontsize "10"
                                      :style :filled
-                                     :color "#ca0020"
+                                     :color "lightblue"
                                      :fillcolor "white"})
                           (if (some #{(second %2)} responses)
                             (assoc-in %1 [:responses (first %2)]
@@ -134,7 +134,7 @@
                                        :fixedsize :true
                                        :fontsize "10"
                                        :style :filled
-                                       :color "#f4a582"
+                                       :color "skyblue"
                                        :fillcolor "white"})
                             (if (some #{(second %2)} pressures) 
                               (assoc-in %1 [:pressures (first %2)]
@@ -144,7 +144,7 @@
                                          :fixedsize :true
                                          :fontsize "10"
                                          :style :filled
-                                         :color"#f7f7f7"
+                                         :color "steelblue"
                                          :fillcolor "white"})
                               (if (some #{(second %2)} impacts) 
                                 (assoc-in %1 [:impacts (first %2)]
@@ -154,7 +154,7 @@
                                            :fixedsize :true
                                            :fontsize "10"
                                            :style :filled
-                                           :color"#92c5de"
+                                           :color "brown"
                                            :fillcolor "white"})
                                 (if (some #{(second %2)} state-changes) 
                                   (assoc-in %1 [:state-changes (first %2)]
@@ -164,7 +164,7 @@
                                              :fixedsize :true
                                              :fontsize "10"
                                              :style :filled
-                                             :color"#0571b0"
+                                             :color "beige"
                                              :fillcolor "white"}))))))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
