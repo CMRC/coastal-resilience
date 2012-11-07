@@ -111,7 +111,7 @@
 
 (defn edit-links [params]
   (clutch/with-db db
-    (let [node-types [:drivers :responses :pressures :impacts :state-changes]
+    (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
           g {}
           links (:links (clutch/get-document (params :id)))
           nodes (:nodes (clutch/get-document (params :id)))
@@ -175,29 +175,30 @@
                                               :weight (str (math/abs (url-weight w)))
                                               :penwidth (str (math/abs (url-weight w)))
                                               :color (if (> (url-weight w) 0) "blue" "red")
-                                              :constraint :false
+                                              :constraint :true
                                               :head_lp "10,10"})
                                    %1))
                               {} links)
-          nodes-subgraph (fn [node-type] (into [] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :size "24,9" :ranksep "1.2" :stylesheet "/css/style.css"}]
+          nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
+          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/css/style.css"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
-                                               (reduce ;;draw nodes
+                                               (map #(subgraph % (nodes-subgraph %)) node-types)
+                                               #_(reduce ;;draw nodes
                                                 (fn [nts nt]
                                                   (reduce
                                                    (fn [m v] (cons v m))
                                                    nts
                                                    (nodes-subgraph nt))) [] node-types)
                                                links-subgraph
-                                               (map #(vector % {:style :invis}) (conj node-types :end))
-                                               (reduce ;;links from node-type names to each node of that type
+                                               #_(map #(vector % {:style :invis}) (conj node-types :end))
+                                               #_(reduce ;;links from node-type names to each node of that type
                                                 (fn [nts nt]
                                                   (reduce
                                                    (fn [m v] (cons [nt (first v) {:style :invis}] m))
                                                    nts
                                                    (nodes-subgraph nt))) [] node-types)
-                                               [(conj node-types :end {:style :invis :weight "3"})]))))]
+                                               #_[(conj node-types :end {:style :invis :weight "3"})]))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg :layout :dot})
        (= (params :format) "dot")   {:status 200	 

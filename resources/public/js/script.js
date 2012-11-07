@@ -8,7 +8,8 @@ var fromNode;
 var g = document.getElementById('graph1');
 
 function cursorPoint(evt,tgt){
-    pt.x = evt.clientX; pt.y = evt.clientY;
+    pt.x = evt.clientX; 
+    pt.y = evt.clientY;
     return pt.matrixTransform(evt.target.getScreenCTM().inverse());
 }
 
@@ -27,8 +28,8 @@ document.body.addEventListener('click',function(e){
 		m = m.nextSibling;
 	    }
 	    var menu = document.createElementNS(xhtmlNS,'ul');
-	    menu.style.left = e.clientX + 'px';
-	    menu.style.top = e.clientY + 'px';
+	    menu.style.left = e.pageX + 'px';
+	    menu.style.top = e.pageY + 'px';
 	    menu.style.position = 'absolute';
 	    menu.setAttribute('class','menu');
 	    var j=0;
@@ -99,8 +100,8 @@ document.body.addEventListener('contextmenu',function(e){
 	var deletelink = document.createElementNS(xhtmlNS,'a');
 	deletelink.setAttribute('href',deleteurl);
 	var deletemenu = document.createElementNS(xhtmlNS,'ul');
-	deletemenu.style.left = e.clientX + 'px';
-	deletemenu.style.top = e.clientY + 'px';
+	deletemenu.style.left = e.pageX + 'px';
+	deletemenu.style.top = e.pageY + 'px';
 	deletemenu.style.position = 'absolute';
 	deletemenu.setAttribute('class','menu');
 	var deleteitem = document.createElementNS(xhtmlNS,'li');
