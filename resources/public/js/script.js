@@ -10,9 +10,8 @@ var g = document.getElementById('graph1');
 function cursorPoint(evt,tgt){
     pt.x = evt.clientX; 
     pt.y = evt.clientY;
-    return pt.matrixTransform(evt.target.getScreenCTM().inverse());
+    return pt.matrixTransform(tgt.getScreenCTM().inverse());
 }
-
 var onmove;
 
 document.body.addEventListener('click',function(e){
@@ -57,7 +56,6 @@ document.body.addEventListener('click',function(e){
 	    fromNode = null;
 	}
 	else {
-	    var mouseStart   = cursorPoint(e);
 	    fromNode = e.target.parentNode.firstChild.firstChild.nodeValue;
 	    m = e.target.parentNode.firstChild;
 	    while(m) {
@@ -72,20 +70,20 @@ document.body.addEventListener('click',function(e){
 	    }
 	    var n = document.createElementNS(svgNS,'line');
 	    n.setAttribute('id', 'arrow');
-	    n.setAttribute('x1',mouseStart.x);
-	    n.setAttribute('y1',mouseStart.y);
-	    n.setAttribute('x2',elementStart.x);
-	    n.setAttribute('y2',elementStart.y);
+	    n.setAttribute('transform', 'translate(' + elementStart.x + ','
+			   + elementStart.y + ')');
+	    n.setAttribute('x1',0);
+	    n.setAttribute('y1',0);
+	    n.setAttribute('x2',0);
+	    n.setAttribute('y2',0);
 	    n.setAttribute('stroke', 'black');
 	    g.insertBefore(n,svg.querySelectorAll('.node')[0]);
-	    onmove = function(e){
-		var current = cursorPoint(e);
-		pt.x = current.x - mouseStart.x;
-		pt.y = current.y - mouseStart.y;
-		n.setAttribute('x1',mouseStart.x+pt.x);
-		n.setAttribute('y1',mouseStart.y+pt.y);
-		n.setAttribute('x2',elementStart.x);
-		n.setAttribute('y2',elementStart.y);
+	    onmove = function(evt){
+		var current = cursorPoint(evt,n);
+		n.setAttribute('x1',current.x);
+		n.setAttribute('y1',current.y);
+		n.setAttribute('x2',0);
+		n.setAttribute('y2',0);
 	    };
 	    document.body.addEventListener('mousemove',onmove,false);
 	}

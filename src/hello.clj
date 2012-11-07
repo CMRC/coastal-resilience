@@ -330,14 +330,7 @@
                       (drop-down "element" responses)
                       (submit-button "Add"))]]]
           [:div {:style "clear: both;margin: 20px"}
-           (if-let [node (params :node)]
-             (edit-links (assoc-in params [:format] "img"))
-             #_(str "<object data=\"" (base-path params) "/img/edit/"
-                  (when-let [tail (params "tail")] (str tail "/"))
-                  node
-                  (when-let [weight (params :weight)] (str "/" weight))
-                  "\"/>")
-             (edit-links (assoc-in params [:format] "img")))]]
+           (edit-links (assoc-in params [:format] "img"))]]
          [:script {:src "/js/script.js"}])))))
 
 ;; define routes
