@@ -1,7 +1,7 @@
 (ns hello-world
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
         hiccup.core, hiccup.form, hiccup.page
-        com.ashafa.clutch.view-server dorothy.core)
+        com.ashafa.clutch.view-server dorothy.core clojure.contrib.math)
   (:require [compojure.route :as route]
             [clojure.xml :as xml] 
             [clojure.contrib.string :as str] 
@@ -309,7 +309,8 @@
                       nodes))
               states (incanter/matrix 1 (count nodes) 1)
               out (incanter/plus (incanter/mmult (incanter/trans causes) states) states)
-              chart (doto (chart/bar-chart (vals nodes) out :x-label ""
+              squashed (map #(/ 1 (+ 1 (expt Math/E %))) out)
+              chart (doto (chart/bar-chart (vals nodes) squashed :x-label ""
                                            :y-label "")
                       (chart/set-theme (StandardChartTheme. "theme"))
                       (->
