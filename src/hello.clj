@@ -308,7 +308,7 @@
                                 nodes)))
                       nodes))
               states (incanter/matrix 1 (count nodes) 1)
-              out (incanter/plus (incanter/mmult causes states) states)
+              out (incanter/plus (incanter/mmult (incanter/trans causes) states) states)
               chart (doto (chart/bar-chart (vals nodes) out :x-label ""
                                            :y-label "")
                       (chart/set-theme (StandardChartTheme. "theme"))
