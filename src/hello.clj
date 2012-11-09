@@ -288,29 +288,30 @@
                             nodes)))}
         "bar"
         (let [causes
-              (apply vector                                               
-                     (map                                               ;;value rows
-                      (fn [head]                                        ;;each elem as a potential head
-                        (apply vector
-                               (map                                ;;each elem as a potential tail
-                                (fn [tail]
-                                  (if                         ;;loop through links, finding matches
-                                      (= (name (first head))  ;; value of key,value
-                                         (:tail (get links    ;; tail matches tail, get weight
-                                                     (keyword 
-                                                      (str (name (first tail))
-                                                           (name (first head)))))))
-                                    (num-weight           ;;cell value
-                                     (:weight (get links (keyword
-                                                          (str (name (first tail))
-                                                               (name (first head)))))))
-                                    0.0))               ;;no link, =zero
-                                nodes)))
-                      nodes))
+              (incanter/trans
+               (apply vector                                               
+                      (map                                               ;;value rows
+                       (fn [head]                                        ;;each elem as a potential head
+                         (apply vector
+                                (map                                ;;each elem as a potential tail
+                                 (fn [tail]
+                                   (if                         ;;loop through links, finding matches
+                                       (= (name (first head))  ;; value of key,value
+                                          (:tail (get links    ;; tail matches tail, get weight
+                                                      (keyword 
+                                                       (str (name (first tail))
+                                                            (name (first head)))))))
+                                     (num-weight           ;;cell value
+                                      (:weight (get links (keyword
+                                                           (str (name (first tail))
+                                                                (name (first head)))))))
+                                     0.0))               ;;no link, =zero
+                                 nodes)))
+                       nodes)))
               states (incanter/matrix 1 (count nodes) 1)
-              out (incanter/plus (incanter/mmult (incanter/trans causes) states) states)
-              squashed (map #(/ 1 (+ 1 (expt Math/E %))) out)
-              chart (doto (chart/bar-chart (vals nodes) squashed :x-label ""
+              squash (fn [out] (map #(/ 1 (+ 1 (expt Math/E (unchecked-negate %)))) out))
+              out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
+              chart (doto (chart/bar-chart (vals nodes) out :x-label ""
                                            :y-label "")
                       (chart/set-theme (StandardChartTheme. "theme"))
                       (->
