@@ -6,12 +6,16 @@
             [clojure.xml :as xml] 
             [clojure.contrib.string :as str] 
             [clojure.contrib.math :as math]
-            [com.ashafa.clutch :as clutch])
+            [com.ashafa.clutch :as clutch]
+            [incanter.core :as incanter]
+            [incanter.charts :as chart])
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream)
            (java.net URLEncoder
                      URLDecoder
-                     URL)))
+                     URL)
+           (org.jfree.chart StandardChartTheme)
+           (org.jfree.chart.axis CategoryLabelPositions)))
 
 #_(clutch/configure-view-server "resilience" (view-server-exec-string))
 
@@ -100,7 +104,8 @@
 (defn if-weight [weight] (if weight weight "0"))
 (defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
 (defn inc-weight [weight] (str (mod (inc (Integer/parseInt (if-weight weight))) 7)))
-(defn display-weight [weight] (str (float (/ (url-weight weight) 4))))
+(defn num-weight [weight] (float (/ (url-weight weight) 4)))
+(defn display-weight [weight] (str (num-weight weight)))
 
 (defn create-user [email]
   (clutch/with-db db
@@ -281,6 +286,45 @@
                                            nodes))
                                    "\n"))
                             nodes)))}
+        "bar"
+        (let [causes
+              (apply vector                                               
+                     (map                                               ;;value rows
+                      (fn [head]                                        ;;each elem as a potential head
+                        (apply vector
+                               (map                                ;;each elem as a potential tail
+                                (fn [tail]
+                                  (if                         ;;loop through links, finding matches
+                                      (= (name (first head))  ;; value of key,value
+                                         (:tail (get links    ;; tail matches tail, get weight
+                                                     (keyword 
+                                                      (str (name (first tail))
+                                                           (name (first head)))))))
+                                    (num-weight           ;;cell value
+                                     (:weight (get links (keyword
+                                                          (str (name (first tail))
+                                                               (name (first head)))))))
+                                    0.0))               ;;no link, =zero
+                                nodes)))
+                      nodes))
+              states (incanter/matrix 1 (count nodes) 1)
+              out (incanter/plus (incanter/mmult causes states) states)
+              chart (doto (chart/bar-chart (vals nodes) out :x-label ""
+                                           :y-label "")
+                      (chart/set-theme (StandardChartTheme. "theme"))
+                      (->
+                       .getPlot
+                       .getDomainAxis
+                       (.setCategoryLabelPositions
+                        (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
+              out-stream (ByteArrayOutputStream.)
+              in-stream (do
+                          (incanter/save chart out-stream :width 600 :height 400)
+                          (ByteArrayInputStream. 
+                           (.toByteArray out-stream)))]
+          {:status 200
+           :headers {"Content-Type" "image/png"}
+           :body in-stream})
         "edit"
         (xhtml
          [:head
@@ -329,8 +373,10 @@
              (form-to [:post (str (base-path params) "/mode/add")]
                       (drop-down "element" responses)
                       (submit-button "Add"))]]]
-          [:div {:style "clear: both;margin: 20px"}
-           (edit-links (assoc-in params [:format] "img"))]]
+          [:div {:style "clear: both;float: left;width 60%"}
+           (edit-links (assoc-in params [:format] "img"))]
+          [:div {:style "float: right;width 40%"}
+           [:img {:src (str (base-path params) "/mode/bar")}]]]
          [:script {:src "/js/script.js"}])))))
 
 ;; define routes
