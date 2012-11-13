@@ -10,12 +10,18 @@
             [incanter.core :as incanter]
             [incanter.charts :as chart])
   (:import (java.io ByteArrayOutputStream
-                    ByteArrayInputStream)
+                    ByteArrayInputStream
+                    OutputStreamWriter)
            (java.net URLEncoder
                      URLDecoder
                      URL)
+           (java.awt.geom Rectangle2D$Double)
            (org.jfree.chart StandardChartTheme)
-           (org.jfree.chart.axis CategoryLabelPositions)))
+           (org.jfree.chart.axis CategoryLabelPositions)
+           (org.apache.batik.transcoder TranscoderInput
+                                        TranscoderOutput)
+           (org.apache.batik.dom GenericDOMImplementation)
+           (org.apache.batik.svggen SVGGraphics2D)))
 
 #_(clutch/configure-view-server "resilience" (view-server-exec-string))
 
@@ -27,6 +33,25 @@
 (def default-data-file "Mike%20-%20FCM%20Cork%20Harbour.csv")
 (def default-format "matrix")
 (def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
+
+(defn exportChartAsSVG
+  [chart]
+  ;;Get a DOMImplementation and create an XML document
+  (let [domImpl (GenericDOMImplementation/getDOMImplementation)
+        document (.createDocument domImpl nil "svg" nil)
+        ;; Create an instance of the SVG Generator
+        svgGenerator (SVGGraphics2D. document)
+        rect (Rectangle2D$Double. 0 0 600 300)
+        draw (.draw chart svgGenerator rect)
+        ;; Write svg file
+        outputStream (ByteArrayOutputStream.)
+        out (OutputStreamWriter. outputStream "UTF-8")
+        gen (.stream svgGenerator out true)]
+    (.flush outputStream)
+    (.close outputStream)
+    outputStream))
+    
+
 
 (defn base-path [params] (str "/resilience/" (params :id)))
 
@@ -111,7 +136,7 @@
   (clutch/with-db db
     (if-let [user (seq (clutch/get-view "users" :by-user {:key email}))]
       (clutch/put-document (merge (:value (first user)) {:user email}))
-      (clutch/put-document {:user email}))))
+      (clutch/put-document {:user email :nodes {} :links {}}))))
 
 
 (defn edit-links [params]
@@ -185,7 +210,8 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/css/style.css"}]
+          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/css/style.css"
+                                 :ratio :expand}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
                                                (map #(subgraph % (nodes-subgraph %)) node-types)
@@ -287,46 +313,47 @@
                                    "\n"))
                             nodes)))}
         "bar"
-        (let [causes
-              (incanter/trans
-               (apply vector                                               
-                      (map                                               ;;value rows
-                       (fn [head]                                        ;;each elem as a potential head
-                         (apply vector
-                                (map                                ;;each elem as a potential tail
-                                 (fn [tail]
-                                   (if                         ;;loop through links, finding matches
-                                       (= (name (first head))  ;; value of key,value
-                                          (:tail (get links    ;; tail matches tail, get weight
-                                                      (keyword 
-                                                       (str (name (first tail))
-                                                            (name (first head)))))))
-                                     (num-weight           ;;cell value
-                                      (:weight (get links (keyword
-                                                           (str (name (first tail))
-                                                                (name (first head)))))))
-                                     0.0))               ;;no link, =zero
-                                 nodes)))
-                       nodes)))
-              states (incanter/matrix 1 (count nodes) 1)
-              squash (fn [out] (map #(/ 1 (+ 1 (expt Math/E (unchecked-negate %)))) out))
-              out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
-              chart (doto (chart/bar-chart (vals nodes) out :x-label ""
-                                           :y-label "")
-                      (chart/set-theme (StandardChartTheme. "theme"))
-                      (->
-                       .getPlot
-                       .getDomainAxis
-                       (.setCategoryLabelPositions
-                        (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
-              out-stream (ByteArrayOutputStream.)
-              in-stream (do
-                          (incanter/save chart out-stream :width 600 :height 400)
-                          (ByteArrayInputStream. 
-                           (.toByteArray out-stream)))]
-          {:status 200
-           :headers {"Content-Type" "image/png"}
-           :body in-stream})
+        (if (seq nodes)
+          (let [causes
+                (incanter/trans
+                 (apply vector                                               
+                        (map                                               ;;value rows
+                         (fn [head]                                        ;;each elem as a potential head
+                           (apply vector
+                                  (map                                ;;each elem as a potential tail
+                                   (fn [tail]
+                                     (if                         ;;loop through links, finding matches
+                                         (= (name (first head))  ;; value of key,value
+                                            (:tail (get links    ;; tail matches tail, get weight
+                                                        (keyword 
+                                                         (str (name (first tail))
+                                                              (name (first head)))))))
+                                       (num-weight           ;;cell value
+                                        (:weight (get links (keyword
+                                                             (str (name (first tail))
+                                                                  (name (first head)))))))
+                                       0.0))               ;;no link, =zero
+                                   nodes)))
+                         nodes)))
+                states (incanter/matrix 1 (count nodes) 1)
+                squash (fn [out] (map #(/ 1 (inc (expt Math/E (unchecked-negate %)))) out))
+                out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
+                minusahalf (map #(- % 0.5) out)
+                chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
+                                             :y-label "")
+                        (chart/set-theme (StandardChartTheme. "theme"))
+                        (->
+                         .getPlot
+                         .getDomainAxis
+                         (.setCategoryLabelPositions
+                          (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))
+                out-stream (ByteArrayOutputStream.)
+                in-stream (do
+                            (incanter/save chart out-stream :width 600 :height 400)
+                            (ByteArrayInputStream. 
+                             (.toByteArray out-stream)))]
+            (exportChartAsSVG chart))
+          "add some nodes")
         "edit"
         (xhtml
          [:head
@@ -375,14 +402,16 @@
              (form-to [:post (str (base-path params) "/mode/add")]
                       (drop-down "element" responses)
                       (submit-button "Add"))]]]
-          [:div {:style "clear: both;float: left;width 60%"}
-           (edit-links (assoc-in params [:format] "img"))]
-          [:div {:style "float: right;width 40%"}
-           [:img {:src (str (base-path params) "/mode/bar")}]]]
-         [:script {:src "/js/script.js"}])))))
-
-;; define routes
-(defroutes webservice
+          [:div {:id "pane"}
+           [:div {:id "graph"}
+            (edit-links (assoc-in params [:format] "img"))]
+           [:div {:id "bar"}
+            (edit-links-html (assoc-in params [:mode] "bar"))
+            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"https://maps.google.com/maps?q=dingle&hl=en&sll=37.0625,-95.677068&t=h&output=embed\"></iframe>"]]
+          [:script {:src "/js/script.js"}]])))))
+  
+  ;; define routes
+  (defroutes webservice
   ;;links for editing
   (GET "/resilience/:id/:format/edit" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:node" {params :params} (edit-links params))
