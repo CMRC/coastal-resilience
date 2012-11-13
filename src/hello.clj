@@ -139,12 +139,10 @@
       (clutch/put-document {:user email :nodes {} :links {}}))))
 
 
-(defn edit-links [params]
+(defn edit-links [params nodes links]
   (clutch/with-db db
     (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
           g {}
-          links (:links (clutch/get-document (params :id)))
-          nodes (:nodes (clutch/get-document (params :id)))
           nodes-graph (reduce
                        #(if (some #{(second %2)} drivers)
                           (assoc-in %1 [:drivers (first %2)]
@@ -197,16 +195,20 @@
                                              :color "beige"
                                              :fillcolor "white"}))))))
                        g nodes)
-          links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))]
+          links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
+                                     weight (if (= (class w) String) (num-weight w) w)]
                                  (if (and (nodes (keyword (:head (val %2))))
-                                            (nodes (keyword (:tail (val %2)))))
-                                   (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
-                                             {:tooltip (display-weight w)
-                                              :weight (str (math/abs (url-weight w)))
-                                              :penwidth (str (math/abs (url-weight w)))
-                                              :color (if (> (url-weight w) 0) "blue" "red")
-                                              :constraint :true
-                                              :head_lp "10,10"})
+                                          (nodes (keyword (:tail (val %2)))))
+                                   (try
+                                     (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
+                                               {:tooltip (str weight)
+                                                :weight (str (math/abs weight))
+                                                :penwidth (str (math/abs weight))
+                                                :color (if (> weight 0) "blue" "red")
+                                                :constraint :true
+                                                :head_lp "10,10"})
+                                     (catch java.lang.ClassCastException e
+                                       (println e)))
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
@@ -215,21 +217,7 @@
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
                                                (map #(subgraph % (nodes-subgraph %)) node-types)
-                                               #_(reduce ;;draw nodes
-                                                (fn [nts nt]
-                                                  (reduce
-                                                   (fn [m v] (cons v m))
-                                                   nts
-                                                   (nodes-subgraph nt))) [] node-types)
-                                               links-subgraph
-                                               #_(map #(vector % {:style :invis}) (conj node-types :end))
-                                               #_(reduce ;;links from node-type names to each node of that type
-                                                (fn [nts nt]
-                                                  (reduce
-                                                   (fn [m v] (cons [nt (first v) {:style :invis}] m))
-                                                   nts
-                                                   (nodes-subgraph nt))) [] node-types)
-                                               #_[(conj node-types :end {:style :invis :weight "3"})]))))]
+                                               links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg :layout :dot})
        (= (params :format) "dot")   {:status 200	 
@@ -249,9 +237,30 @@
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [doc (clutch/get-document (params :id))
-          links (:links doc)
-          nodes (:nodes doc)
-          p(println params)]
+          models (:models doc)
+          avg-weights (fn [f s] (merge f {:weight (+ (num-weight (:weight f))
+                                                     (num-weight (:weight s)))}))
+          links (->>
+                 (:links doc)
+                 (merge-with avg-weights
+                             (reduce #(let [d (clutch/get-document (name (first %2)))
+                                            m (merge-with avg-weights
+                                                          %1 (:links d))]
+                                        #_(println m)
+                                        m)
+                                     {}
+                                     models)))
+          nodes (->
+                 (:nodes doc)
+                 (merge
+                  (reduce #(let [d (clutch/get-document (name (first %2)))
+                                 m (merge %1 (:nodes d))]
+                             m)
+                          {}
+                          models)))
+          losers (map #(:user (:value %)) (clutch/get-view "users" :by-user))
+          users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
+          adduser (clutch/get-view "users" :by-user {:key (params "model")})]
       (case (params :mode)
         "login"    (let [id (:_id (create-user (params "email")))]
                      {:status 303
@@ -261,6 +270,14 @@
                       (merge doc
                              {:nodes (merge nodes
                                             {(encode-nodename (params "element")) (params "element")})}))
+                     {:status 303
+                      :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "addmodel" (let
+                       [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
+                     (clutch/update-document
+                      (merge doc
+                             {:models (merge models
+                                             {(:id (first adduser)) (params "model")})}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "delete"   (do
@@ -328,10 +345,10 @@
                                                         (keyword 
                                                          (str (name (first tail))
                                                               (name (first head)))))))
-                                       (num-weight           ;;cell value
-                                        (:weight (get links (keyword
-                                                             (str (name (first tail))
-                                                                  (name (first head)))))))
+                                       (let [w (:weight (get links (keyword
+                                                                    (str (name (first tail))
+                                                                         (name (first head))))))]
+                                         (if (= (class w) String) (num-weight w) w))
                                        0.0))               ;;no link, =zero
                                    nodes)))
                          nodes)))
@@ -359,61 +376,51 @@
          [:head
           [:script {:src "/js/script.js"}]
           [:style {:type "text/css"} "@import \"/css/style.css\";"]]
-         [:body (edit-links (conj params {:format "cmapx" }))
+         [:body
           [:div
-           [:div {:style "clear: both;margin: 20px"}
-            [:div {:style "float: left;margin-right: 10px"}
+           [:div {:class "menu"}
              (form-to [:get (str (base-path params) "/mode/save/" (params :tail) "/" (params :node) "/"
                                  (if-weight (params :weight)))]
-                      (submit-button "Save"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             (form-to [:get (str (base-path params) "/mode/download")]
-                      (submit-button "Download"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             (form-to [:post (str (base-path params) "/mode/login")]
-                      (text-field "email"
-                                  (if-let [doc (clutch/get-document (params :id))]
-                                    (:user doc)
-                                    ""))
-                      (submit-button "Login"))]]
-           [:div {:style "clear: both;margin: 20px"}
-            [:div {:style "float: left;margin-right: 10px"}
-             "Drivers"
-             (form-to [:post (str (base-path params) "/mode/add")]
-                      (drop-down "element" drivers)
-                      (submit-button "Add"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             "Pressures"
-             (form-to [:post (str (base-path params) "/mode/add")]
-                      (drop-down "element" pressures)
-                      (submit-button "Add"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             "State Changes"
-             (form-to [:post (str (base-path params) "/mode/add")]
-                      (drop-down "element" state-changes)
-                      (submit-button "Add"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             "Impacts"
-             (form-to [:post (str (base-path params) "/mode/add")]
-                      (drop-down "element" impacts)
-                      (submit-button "Add"))]
-            [:div {:style "float: left;margin-right: 10px"}
-             "Responses"
-             (form-to [:post (str (base-path params) "/mode/add")]
-                      (drop-down "element" responses)
-                      (submit-button "Add"))]]]
+                      (submit-button "Save"))
+            (form-to [:get (str (base-path params) "/mode/download")]
+                     (submit-button "Download"))
+            (form-to [:post (str (base-path params) "/mode/login")]
+                     (text-field "email"
+                                 (if-let [doc (clutch/get-document (params :id))]
+                                   (:user doc)
+                                   ""))
+                     (submit-button "Login"))
+            (form-to [:post (str (base-path params) "/mode/addmodel")]
+                     (drop-down "model" users)
+                     (submit-button "Add"))]
+           [:div {:class "menu"}
+            (form-to [:post (str (base-path params) "/mode/add")]
+                     (drop-down "element" drivers)
+                     (submit-button "Add"))
+            (form-to [:post (str (base-path params) "/mode/add")]
+                     (drop-down "element" pressures)
+                     (submit-button "Add"))
+            (form-to [:post (str (base-path params) "/mode/add")]
+                     (drop-down "element" state-changes)
+                     (submit-button "Add"))
+            (form-to [:post (str (base-path params) "/mode/add")]
+                     (drop-down "element" impacts)
+                     (submit-button "Add"))
+            (form-to [:post (str (base-path params) "/mode/add")]
+                     (drop-down "element" responses)
+                     (submit-button "Add"))]]
           [:div {:id "pane"}
            [:div {:id "graph"}
-            (edit-links (assoc-in params [:format] "img"))]
+            (edit-links (assoc-in params [:format] "img") nodes links)]
            [:div {:id "bar"}
             (edit-links-html (assoc-in params [:mode] "bar"))
-            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"https://maps.google.com/maps?q=dingle&hl=en&sll=37.0625,-95.677068&t=h&output=embed\"></iframe>"]]
+            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://maps.google.com/maps?q=dingle&hl=en&sll=37.0625,-95.677068&t=h&output=embed\"></iframe>"]]
           [:script {:src "/js/script.js"}]])))))
   
   ;; define routes
   (defroutes webservice
   ;;links for editing
-  (GET "/resilience/:id/:format/edit" {params :params} (edit-links params))
+  #_(GET "/resilience/:id/:format/edit" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:node" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
