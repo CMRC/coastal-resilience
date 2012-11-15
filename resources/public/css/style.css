@@ -1,5 +1,5 @@
 body {
-    width: 1600px;
+    width: 1800px;
 }
 .menu li {
     list-style: none;
@@ -26,12 +26,12 @@ svg {
 }
 #graph {
     float: left;
-    width: 900px;
+    width: 1000px;
     height: 100%;
 }
 #bar {
-    width: 700px;
-    height: 300;
+    width: 800px;
+    height: 300px;
     margin-left: 30;
     float: left;
 }
@@ -40,5 +40,11 @@ svg {
 }
 #bar iframe {
     height: 300px;
+}
+.menu {
+    clear: both;
+}
+.menu form {
+    float: left;
 }
 
