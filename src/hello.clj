@@ -129,7 +129,9 @@
 (defn if-weight [weight] (if weight weight "0"))
 (defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
 (defn inc-weight [weight] (str (mod (inc (Integer/parseInt (if-weight weight))) 7)))
-(defn num-weight [weight] (float (/ (url-weight weight) 4)))
+(defn num-weight [weight] (if (= (class weight) String)
+                            (float (/ (url-weight weight) 4))
+                            weight))
 (defn display-weight [weight] (str (num-weight weight)))
 
 (defn create-user [email]
@@ -236,20 +238,26 @@
 
 (defn edit-links-html [params]
   (clutch/with-db db
-    (let [doc (clutch/get-document (params :id))
+    (let [if-count (fn [c] (if (:count c) (:count c) 1))
+          doc (clutch/get-document (params :id))
           models (:models doc)
-          avg-weights (fn [f s] (merge f {:weight (+ (num-weight (:weight f))
-                                                     (num-weight (:weight s)))}))
+          avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
+                                                        (* (num-weight (:weight s)) (if-count s)))
+                                                     (+ (if-count f) (if-count s)))
+                                          :count (+
+                                                  (if-count f)
+                                                  (if-count s))}))
           links (->>
                  (:links doc)
-                 (merge-with avg-weights
-                             (reduce #(let [d (clutch/get-document (name (first %2)))
-                                            m (merge-with avg-weights
-                                                          %1 (:links d))]
-                                        #_(println m)
-                                        m)
-                                     {}
-                                     models)))
+                 (merge
+                  (reduce #(let [d (clutch/get-document (name (first %2)))
+                                 m (merge-with avg-weights
+                                               %1 (:links d))]
+                             (println m)
+                             m)
+                          {}
+                          models)))
+          p (println links)
           nodes (->
                  (:nodes doc)
                  (merge
@@ -289,13 +297,13 @@
         "save"     (do (if (= (params :weight) "3") ;;maps to zero
                          (clutch/put-document
                           (merge doc
-                                 {:links (dissoc links
+                                 {:links (dissoc (:links doc)
                                                  (keyword (str (params :node)
                                                                (params :tail))))}))
                          (clutch/put-document
                           (merge doc
                                  {:links
-                                  (merge links
+                                  (merge (:links doc)
                                          {(keyword (str (params :node)
                                                         (params :tail)))
                                           {:head (params :node)
@@ -346,9 +354,9 @@
                                                          (str (name (first tail))
                                                               (name (first head)))))))
                                        (let [w (:weight (get links (keyword
-                                                                    (str (name (first tail))
-                                                                         (name (first head))))))]
-                                         (if (= (class w) String) (num-weight w) w))
+                                                                       (str (name (first tail))
+                                                                            (name (first head))))))]
+                                         (num-weight w))
                                        0.0))               ;;no link, =zero
                                    nodes)))
                          nodes)))
