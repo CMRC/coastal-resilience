@@ -385,9 +385,6 @@
          [:body
           [:div
            [:div {:class "menu"}
-             (form-to [:get (str (base-path params) "/mode/save/" (params :tail) "/" (params :node) "/"
-                                 (if-weight (params :weight)))]
-                      (submit-button "Save"))
             (form-to [:get (str (base-path params) "/mode/download")]
                      (submit-button "Download"))
             (form-to [:post (str (base-path params) "/mode/login")]
