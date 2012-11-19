@@ -68,22 +68,29 @@ document.body.addEventListener('click',function(e){
 		}
 		m = m.nextSibling;
 	    }
+	    var lg = document.createElementNS(svgNS,'g');
 	    var n = document.createElementNS(svgNS,'line');
+	    lg.appendChild(n);
 	    n.setAttribute('id', 'arrow');
 	    n.setAttribute('transform', 'translate(' + elementStart.x + ','
 			   + elementStart.y + ')');
 	    n.setAttribute('x1',0);
 	    n.setAttribute('y1',0);
-	    n.setAttribute('x2',0);
-	    n.setAttribute('y2',0);
+	    n.setAttribute('x2',1);
+	    n.setAttribute('y2',1);
 	    n.setAttribute('stroke', 'black');
-	    g.insertBefore(n,svg.querySelectorAll('.node')[0]);
+	    g.insertBefore(lg,svg.querySelectorAll('.node')[0]);
 	    onmove = function(evt){
 		var current = cursorPoint(evt,n);
 		n.setAttribute('x1',current.x);
 		n.setAttribute('y1',current.y);
 		n.setAttribute('x2',0);
 		n.setAttribute('y2',0);
+		// lg.setAttribute('transform',
+		// 	       ' translate(' + elementStart.x + ',' + elementStart.y + ')' + 
+		// 	       ' scale(' + Math.sqrt((pt.x * pt.x) + (pt.y * pt.y)) + ') ' +
+		// 	       '
+		//rotate(' + (((180 * Math.atan(pt.y / pt.x)) / Math.PI) - 45) + ')');
 	    };
 	    document.body.addEventListener('mousemove',onmove,false);
 	}

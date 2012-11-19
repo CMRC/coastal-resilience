@@ -9,5 +9,4 @@
                  [dk.ative/docjure "1.6.0-SNAPSHOT"]
                  [incanter "1.4.0"]
                  [org.clojars.pallix/batik "1.7.0"]]
-  :ring {:handler hello}
   :main hello)

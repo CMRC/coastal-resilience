@@ -1,7 +1,7 @@
-(ns hello-world
+(ns hello
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
         hiccup.core, hiccup.form, hiccup.page
-        com.ashafa.clutch.view-server dorothy.core clojure.contrib.math)
+        dorothy.core clojure.contrib.math)
   (:require [compojure.route :as route]
             [clojure.xml :as xml] 
             [clojure.contrib.string :as str] 
@@ -253,11 +253,9 @@
                   (reduce #(let [d (clutch/get-document (name (first %2)))
                                  m (merge-with avg-weights
                                                %1 (:links d))]
-                             (println m)
                              m)
                           {}
                           models)))
-          p (println links)
           nodes (->
                  (:nodes doc)
                  (merge
@@ -443,5 +441,7 @@
   
   (resources "/"))
 
-
-(run-jetty (wrap-params webservice) {:port 8000})
+(defn -main
+  "Run the jetty server."
+  [& args]
+  (run-jetty (wrap-params webservice) {:port 8000}))
