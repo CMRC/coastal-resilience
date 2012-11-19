@@ -214,7 +214,7 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/css/style.css"
+          links-subgraph (into [{:splines :ortho :ranksep "1.2" :stylesheet "/css/style.css"
                                  :ratio :expand}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
