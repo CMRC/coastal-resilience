@@ -423,7 +423,6 @@
   ;; define routes
   (defroutes webservice
   ;;links for editing
-  #_(GET "/resilience/:id/:format/edit" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:node" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
   (GET "/resilience/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
