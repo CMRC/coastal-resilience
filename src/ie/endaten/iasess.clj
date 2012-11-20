@@ -54,7 +54,7 @@
     
 
 
-(defn base-path [params] (str "/resilience/" (params :id)))
+(defn base-path [params] (str "/iasess/" (params :id)))
 
 (defn encode-nodename
   [nodename]
@@ -271,7 +271,7 @@
       (case (params :mode)
         "login"    (let [id (:_id (create-user (params "email")))]
                      {:status 303
-                      :headers {"Location" (str "/resilience/" id "/mode/edit")}})
+                      :headers {"Location" (str (base-path params) id "/mode/edit")}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
