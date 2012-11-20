@@ -416,7 +416,7 @@
             (edit-links (assoc-in params [:format] "img") nodes links)]
            [:div {:id "bar"}
             (edit-links-html (assoc-in params [:mode] "bar"))
-            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://maps.google.com/maps?q=dingle&hl=en&sll=37.0625,-95.677068&t=h&output=embed\"></iframe>"]]
+            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923\"></iframe>"]]
           [:script {:src "/iasess/js/script.js"}]])))))
   
   ;; define routes
