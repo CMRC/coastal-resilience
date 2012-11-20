@@ -424,17 +424,17 @@
   ;; define routes
   (defroutes webservice
   ;;links for editing
-  (GET "/resilience/:id/:format/edit/:node" {params :params} (edit-links params))
-  (GET "/resilience/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
-  (GET "/resilience/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
-  (GET "/resilience/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
-  (GET "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
-  (POST "/resilience/:id/mode/:mode" {params :params} (edit-links-html params))
-  (POST "/resilience/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
-  (GET "/resilience/:id/mode/:mode/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
-  (GET "/resilience/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
-  (GET "/resilience/test" {params :params} (edit-links-html {"mode" "edit"}))
+  (GET "/iasess/:id/:format/edit/:node" {params :params} (edit-links params))
+  (GET "/iasess/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
+  (GET "/iasess/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
+  (GET "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
+  (GET "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
+  (POST "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
+  (POST "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
+  (GET "/iasess/:id/mode/:mode/:node" {params :params} (edit-links-html params))
+  (GET "/iasess/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
+  (GET "/iasess/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
+  (GET "/iasess/test" {params :params} (edit-links-html {"mode" "edit"}))
   
   (resources "/"))
 
