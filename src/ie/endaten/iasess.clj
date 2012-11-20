@@ -52,9 +52,7 @@
     (.close outputStream)
     outputStream))
     
-
-
-(defn base-path [params] (str "/iasess/" (params :id)))
+(defn base-path [params] (str "/iasess" (when (params :id) "/") (params :id)))
 
 (defn encode-nodename
   [nodename]
@@ -271,7 +269,7 @@
       (case (params :mode)
         "login"    (let [id (:_id (create-user (params "email")))]
                      {:status 303
-                      :headers {"Location" (str (base-path params) id "/mode/edit")}})
+                      :headers {"Location" (str (base-path (assoc params :id id)) "/mode/edit")}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
