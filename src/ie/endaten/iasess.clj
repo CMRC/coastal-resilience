@@ -432,7 +432,7 @@
   (GET "/iasess/:id/mode/:mode/:node" {params :params} (edit-links-html params))
   (GET "/iasess/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
   (GET "/iasess/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
-  (GET "/iasess/test" {params :params} (edit-links-html {"mode" "edit"}))
+  (GET "/iasess" {params :params} (edit-links-html (assoc params :id "guest" :mode "edit")))
   
   (resources "/iasess"))
 
