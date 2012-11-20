@@ -215,7 +215,7 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :ortho :ranksep "1.2" :stylesheet "/css/style.css"
+          links-subgraph (into [{:splines :ortho :ranksep "1.2" :stylesheet "/iasess/css/style.css"
                                  :ratio :expand}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
@@ -381,8 +381,8 @@
         "edit"
         (xhtml
          [:head
-          [:script {:src "/js/script.js"}]
-          [:style {:type "text/css"} "@import \"/css/style.css\";"]]
+          [:script {:src "/iasess/js/script.js"}]
+          [:style {:type "text/css"} "@import \"/iasess/css/style.css\";"]]
          [:body
           [:div
            [:div {:class "menu"}
@@ -419,7 +419,7 @@
            [:div {:id "bar"}
             (edit-links-html (assoc-in params [:mode] "bar"))
             "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://maps.google.com/maps?q=dingle&hl=en&sll=37.0625,-95.677068&t=h&output=embed\"></iframe>"]]
-          [:script {:src "/js/script.js"}]])))))
+          [:script {:src "/iasess/js/script.js"}]])))))
   
   ;; define routes
   (defroutes webservice
@@ -436,7 +436,7 @@
   (GET "/iasess/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
   (GET "/iasess/test" {params :params} (edit-links-html {"mode" "edit"}))
   
-  (resources "/"))
+  (resources "/iasess"))
 
 (defn -main
   "Run the jetty server."
