@@ -4,9 +4,8 @@
 		 [compojure "1.1.3"]
 		 [ring "1.1.6"]
 		 [hiccup "1.0.1"]
-                 [com.ashafa/clutch "0.3.1-SNAPSHOT"]
+                 [com.ashafa/clutch "0.4.0-RC1"]
                  [dorothy "0.0.3"]
-                 [dk.ative/docjure "1.6.0-SNAPSHOT"]
                  [incanter "1.4.0"]
                  [org.clojars.pallix/batik "1.7.0"]]
   :main ie.endaten.iasess)
