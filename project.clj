@@ -1,6 +1,6 @@
-(defproject example "1.0.0-SNAPSHOT"
+(defproject iasess "0.0.1"
   :description "iasess prototype"
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.4.0"]
 		 [compojure "1.1.3"]
 		 [ring "1.1.6"]
 		 [hiccup "1.0.1"]

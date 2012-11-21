@@ -1,14 +1,15 @@
 
-* Coastal Resilience Fuzzy Cognitive Map visualisation
+* Iasess Fuzzy Cognitive Map visualisation
 
 
 ** About
 
+http://www.climateireland.ie/iasess
 http://coastalresilience.ie
 
 ** To Run
->lein dep
->lein jar
+: lein dep
+: lein jar
 
 ** You will need
 
@@ -21,3 +22,5 @@ GraphViz
 Copyright (C) 2011-2012 Coastal & Marine Research Centre
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+v0.1
