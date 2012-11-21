@@ -212,8 +212,8 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :ortho :ranksep "1.2" :stylesheet "/iasess/css/style.css"
-                                 :ratio :expand}]
+          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/iasess/css/style.css"
+                                 :ratio :expand :label "iasess"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph (apply vector (concat
                                                (map #(subgraph % (nodes-subgraph %)) node-types)
@@ -382,6 +382,7 @@
         "edit"
         (xhtml
          [:head
+          [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/style.css\";"]]
          [:body
