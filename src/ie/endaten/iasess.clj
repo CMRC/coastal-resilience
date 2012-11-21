@@ -2,10 +2,10 @@
   (:gen-class)
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
         hiccup.core, hiccup.form, hiccup.page
-        dorothy.core clojure.contrib.math)
+        dorothy.core)
   (:require [compojure.route :as route]
             [clojure.xml :as xml] 
-            [clojure.contrib.math :as math]
+            [clojure.math.numeric-tower :as math]
             [com.ashafa.clutch :as clutch]
             [incanter.core :as incanter]
             [incanter.charts :as chart])
@@ -55,7 +55,7 @@
 
 (defn encode-nodename
   [nodename]
-  (URLEncoder/encode (str/replace-re #"[^a-zA-Z0-9]" "" nodename)))
+  (URLEncoder/encode (clojure.string/replace #"[^a-zA-Z0-9]" "" nodename)))
 
 (def drivers       ["Environmental Legislation and Policy"
                     "Tourism and Recreation"
@@ -357,7 +357,7 @@
                                    nodes)))
                          nodes)))
                 states (incanter/matrix 1 (count nodes) 1)
-                squash (fn [out] (map #(/ 1 (inc (expt Math/E (unchecked-negate %)))) out))
+                squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
                 out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
                 minusahalf (map #(- % 0.5) out)
                 chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""

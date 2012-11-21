@@ -7,5 +7,6 @@
                  [com.ashafa/clutch "0.4.0-RC1"]
                  [dorothy "0.0.3"]
                  [incanter "1.4.0"]
-                 [org.clojars.pallix/batik "1.7.0"]]
+                 [org.clojars.pallix/batik "1.7.0"]
+                 [org.clojure/math.numeric-tower "0.0.1"]]
   :main ie.endaten.iasess)
