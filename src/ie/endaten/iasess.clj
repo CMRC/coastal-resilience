@@ -5,7 +5,6 @@
         dorothy.core clojure.contrib.math)
   (:require [compojure.route :as route]
             [clojure.xml :as xml] 
-            [clojure.contrib.string :as str] 
             [clojure.contrib.math :as math]
             [com.ashafa.clutch :as clutch]
             [incanter.core :as incanter]
