@@ -203,21 +203,25 @@
                                      (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
                                                {:tooltip (str weight)
                                                 :weight (str (math/abs weight))
-                                                :penwidth (str (math/abs weight))
-                                                :color (if (> weight 0) "blue" "red")
-                                                :constraint :true
-                                                :head_lp "10,10"})
+                                                :fontsize "10"
+                                                :headlabel (str weight)
+                                                :penwidth (if (= weight 0.0) "1" (str (math/abs weight)))
+                                                :color (if (> weight 0) "blue"
+                                                           (if (= weight 0.0) "grey" "red"))
+                                                :labelfontcolor (if (> weight 0) "blue"
+                                                                    (if (= weight 0.0) "grey" "red"))
+                                                :labeldistance "2"})
                                      (catch java.lang.ClassCastException e
                                        (println e)))
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :ranksep "1.2" :stylesheet "/iasess/css/style.css"
-                                 :ratio :expand :label "iasess"}]
+          links-subgraph (into [{:splines :true :ranksep "1.0" :stylesheet "/iasess/css/style.css"
+                                 :ratio :expand}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
-          dot-out (dot (digraph (apply vector (concat
-                                               (map #(subgraph % (nodes-subgraph %)) node-types)
-                                               links-subgraph))))]
+          dot-out (dot (digraph "iasess" (apply vector (concat
+                                                        (map #(subgraph % (nodes-subgraph %)) node-types)
+                                                        links-subgraph))))]
       (cond
        (= (params :format) "img") (render dot-out {:format :svg :layout :dot})
        (= (params :format) "dot")   {:status 200	 
