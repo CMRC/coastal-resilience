@@ -55,7 +55,7 @@
 
 (defn encode-nodename
   [nodename]
-  (URLEncoder/encode (clojure.string/replace #"[^a-zA-Z0-9]" "" nodename)))
+  (URLEncoder/encode (clojure.string/replace nodename #"[^a-zA-Z0-9]" "")))
 
 (def drivers       ["Environmental Legislation and Policy"
                     "Tourism and Recreation"
@@ -241,6 +241,7 @@
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
+          p (println params)
           doc (clutch/get-document (params :id))
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
@@ -390,6 +391,22 @@
           [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/style.css\";"]]
          [:body
+          [:ul {:id "nav"}
+           (map (fn [[level menustr]]
+                  (vector :li [:a {:href "#"} menustr]
+                          [:ul
+                           (map (fn [concept]
+                                  (vector :li (form-to {:id (encode-nodename concept)}
+                                                       [:post (str (base-path params) "/mode/add")]
+                                                       (hidden-field "element" concept)
+                                                       [:a {:href (str "javascript: submitform(\""
+                                                                       (encode-nodename concept)
+                                                                       "\")")} concept]))) level)]))
+                {drivers "Drivers"
+                 pressures "Pressures"
+                 state-changes "State Changes"
+                 impacts "Welfares"
+                 responses "Responses"})]
           [:div
            [:div {:class "menu"}
             (form-to [:get (str (base-path params) "/mode/download")]
@@ -402,22 +419,6 @@
                      (submit-button "Login"))
             (form-to [:post (str (base-path params) "/mode/addmodel")]
                      (drop-down "model" users)
-                     (submit-button "Add"))]
-           [:div {:class "menu"}
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" drivers)
-                     (submit-button "Add"))
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" pressures)
-                     (submit-button "Add"))
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" state-changes)
-                     (submit-button "Add"))
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" impacts)
-                     (submit-button "Add"))
-            (form-to [:post (str (base-path params) "/mode/add")]
-                     (drop-down "element" responses)
                      (submit-button "Add"))]]
           [:div {:id "pane"}
            [:div {:id "graph"}
