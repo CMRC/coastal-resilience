@@ -152,3 +152,8 @@ document.body.addEventListener('mouseout',function(e){
 	}
     }
 },false);
+
+function submitform(fname)
+{
+    document.getElementById(fname).submit();
+}
