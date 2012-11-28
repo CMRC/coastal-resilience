@@ -138,13 +138,19 @@ abbr,acronym{
 	left:0; /* Bring back on-screen when needed */
 }
 #nav li:hover a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
-	background:#DCD8C2;
-	text-decoration:none;
 	float: left;
-	padding-top: 1px;
 	width: 20em;
 }
-#nav li:hover a #more{
+#nav li .add-text {
+	background:#fff;
+	background:rgba(255,255,255,0);
+	display: none;
+	width: 100%;
+}
+#nav li:hover li:hover .add-text {
+    display: block;
+}
+#nav li:hover li:hover a input {
     width: 100%;
 }
 #nav li:hover ul a{ /* The persistent hover state does however create a global style for links even before they're hovered. Here we undo these effects. */

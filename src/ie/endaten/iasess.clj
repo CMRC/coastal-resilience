@@ -404,8 +404,10 @@
                                                    [:a {:href (str "javascript: submitform(\""
                                                                    (encode-nodename concept)
                                                                    "\")")} concept])
-                                          (form-to [:get (str (base-path params) "/mode/more")]
-                                                   [:a (text-field "more" "additional text")]))) level)]))
+                                          (form-to {:class "add-text"}
+                                                   [:get (str (base-path params) "/mode/more")]
+                                                   [:a
+                                                    (text-field "more" "additional text")]))) level)]))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
