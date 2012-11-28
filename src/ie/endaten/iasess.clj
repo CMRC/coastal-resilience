@@ -57,13 +57,16 @@
   [nodename]
   (URLEncoder/encode (clojure.string/replace nodename #"[^a-zA-Z0-9]" "")))
 
-(def drivers       ["Environmental Legislation and Policy"
-                    "Tourism and Recreation"
-                    "Residential Development"
-                    "Fisheries"
-                    "Agriculture"
-                    "Commerce, Industry & Manufacturing"
-                    "Aquaculture"])
+(def all-concepts
+  {"Drivers" ["Environmental Legislation and Policy"
+              "Tourism and Recreation"
+              "Residential Development"
+              "Fisheries"
+              "Agriculture"
+              "Commerce, Industry & Manufacturing"
+              "Aquaculture"]})
+
+(def drivers (get all-concepts "Drivers"))
 
 (def pressures     ["Roads and Transport Infrastructure"
                     "Terrestrial Traffic"
@@ -237,7 +240,14 @@
                         {:map (fn [doc] [[(:user doc) doc]])}}))))
 ;;(save-views)
 
-
+(defn new-concept [user concept level]
+  (clutch/with-db db
+    (let [doc (clutch/get-document user)]
+          (clutch/update-document
+           (merge doc
+                  {:concepts (merge (:concepts doc)
+                                    {concept level})})))))
+  
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
@@ -279,6 +289,10 @@
                       (merge doc
                              {:nodes (merge nodes
                                             {(encode-nodename (params "element")) (params "element")})}))
+                     {:status 303
+                      :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "addnew"   (do
+                     (new-concept (params :id) (params "element") (params "level"))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addmodel" (let
@@ -395,7 +409,6 @@
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#"} menustr]
                           [:ul
-                           [:li [:a {:href "#"} "Custom"]]
                            (map (fn [concept]
                                   (vector :li
                                           (form-to {:id (encode-nodename concept)}
@@ -407,7 +420,12 @@
                                           (form-to {:class "add-text"}
                                                    [:get (str (base-path params) "/mode/more")]
                                                    [:a
-                                                    (text-field "more" "additional text")]))) level)]))
+                                                    (text-field "more" "additional text")]))) level)
+                           [:li [:a {:href "#"} "Custom..."]
+                            (form-to {:class "add-text" :id level :autocomplete "off"}
+                                     [:post (str (base-path params) "/mode/addnew")]
+                                      (hidden-field "level" menustr)
+                                      [:a (text-field "element" "")])]]))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
