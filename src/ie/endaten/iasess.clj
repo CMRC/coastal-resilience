@@ -395,13 +395,17 @@
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#"} menustr]
                           [:ul
+                           [:li [:a {:href "#"} "Custom"]]
                            (map (fn [concept]
-                                  (vector :li (form-to {:id (encode-nodename concept)}
-                                                       [:post (str (base-path params) "/mode/add")]
-                                                       (hidden-field "element" concept)
-                                                       [:a {:href (str "javascript: submitform(\""
-                                                                       (encode-nodename concept)
-                                                                       "\")")} concept]))) level)]))
+                                  (vector :li
+                                          (form-to {:id (encode-nodename concept)}
+                                                   [:post (str (base-path params) "/mode/add")]
+                                                   (hidden-field "element" concept)
+                                                   [:a {:href (str "javascript: submitform(\""
+                                                                   (encode-nodename concept)
+                                                                   "\")")} concept])
+                                          (form-to [:get (str (base-path params) "/mode/more")]
+                                                   [:a (text-field "more" "additional text")]))) level)]))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"

@@ -123,10 +123,13 @@ abbr,acronym{
 	list-style:none;
 	position:absolute;
 	left:-9999px; /* Hide off-screen when not needed (this is more accessible than display:none;) */
+	display: inline-block;
 }
 #nav ul li{
 	padding-top:1px; /* Introducing a padding between the li and the a give the illusion spaced items */
 	float:none;
+	width: 50em;
+	clear: both;
 }
 #nav ul a{
 	white-space:nowrap; /* Stop text wrapping and creating multi-line dropdown items */
@@ -137,6 +140,12 @@ abbr,acronym{
 #nav li:hover a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
 	background:#DCD8C2;
 	text-decoration:none;
+	float: left;
+	padding-top: 1px;
+	width: 20em;
+}
+#nav li:hover a #more{
+    width: 100%;
 }
 #nav li:hover ul a{ /* The persistent hover state does however create a global style for links even before they're hovered. Here we undo these effects. */
 	text-decoration:none;
@@ -144,9 +153,6 @@ abbr,acronym{
 #nav li:hover ul li a:hover{ /* Here we define the most explicit hover states--what happens when you hover each individual link. */
 	background:#7CB7C6;
 }
-
-
-
 
 
 /*------------------------------------*\
