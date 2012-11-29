@@ -58,74 +58,84 @@
   (URLEncoder/encode (clojure.string/replace nodename #"[^a-zA-Z0-9]" "")))
 
 (def all-concepts
-  {"Drivers" ["Environmental Legislation and Policy"
-              "Tourism and Recreation"
-              "Residential Development"
-              "Fisheries"
-              "Agriculture"
-              "Commerce, Industry & Manufacturing"
-              "Aquaculture"]})
+  {"Drivers"
+   ["Environmental Legislation and Policy"
+    "Tourism and Recreation"
+    "Residential Development"
+    "Fisheries"
+    "Agriculture"
+    "Commerce, Industry & Manufacturing"
+    "Aquaculture"]
+   
+   "Pressures"
+   ["Roads and Transport Infrastructure"
+    "Terrestrial Traffic"
+    "Coastal Population Growth"
+    "Coastal Squeeze"
+    "Coastal Access Points"
+    "Port and Marina Facilities"
+    "Marine Traffic"
+    "Commuter Belts /Urban Sprawl"
+    "EROSION"
+    "COASTAL INUNDATION/FLOODING"
+    "DROUGHT"
+    "Local Coastal Processes (OTHER)"
+    "Terrestrial Surface Water Pollution"
+    "Marine Pollution"
+    "Commercial Fishing"
+    "Soil Contamination"
+    "Demand for Resource Access"
+    "Enforcement: Environmental Protection"]
+
+   "State Changes"
+   ["Benthos"
+    "Cliff Systems"
+    "Sea Water Quality"
+    "Avoidance of Harmful Algal Blooms"
+    "River Systems"
+    "Wetlands"
+    "Dune Systems"
+    "Ecological Niches: Native Species"
+    "Local Employment"
+    "Community Cohesion"
+    "Integrated Coastal Development"]
+  
+   "Welfares"
+   ["Food Provision: Marine Organisms"
+    "Food Provision: Terrestrial Agriculture"
+    "Inshore Marine Productivity"
+    "Bioremediation: Waste Processing and Removal"
+    "Flood Protection: Storm surge/Tidal/Fluvial"
+    "Sea-Level Rise Buffering"
+    "Raw Material Provision"
+    "Fresh Water Supply"
+    "Marine Transport and Navigation"
+    "Coastal Amenity: Leisure/Recreation"
+    "Habitable Land: Secure Coastal Development"
+    "Cultural Heritage"]
+
+   "Responses"
+   ["NGO Protest"
+    "Civil Society Lobbying"
+    "Voluntary Community Initiatives"
+    "Champions"
+    "Seek Investment: EU/National/Private"
+    "Economic Diversification"
+    "Increased commercial Exploitation"
+    "Increased Exploitation: Other Marine Sp."
+    "Individual Insurance Cover"
+    "Local Authority Planning/Zoning"
+    "Introduction/Enforcement of bye-laws"
+    "Payment of EU Fines"
+    "Construction of Coastal/Flood Defences"
+    "Re-location away from coast"]})
 
 (def drivers (get all-concepts "Drivers"))
+(def pressures (get all-concepts "Pressures"))
+(def state-changes (get all-concepts "State Changes"))
+(def impacts (get all-concepts "Welfares"))
+(def responses (get all-concepts "Responses"))
 
-(def pressures     ["Roads and Transport Infrastructure"
-                    "Terrestrial Traffic"
-                    "Coastal Population Growth"
-                    "Coastal Squeeze"
-                    "Coastal Access Points"
-                    "Port and Marina Facilities"
-                    "Marine Traffic"
-                    "Commuter Belts /Urban Sprawl"
-                    "EROSION"
-                    "COASTAL INUNDATION/FLOODING"
-                    "DROUGHT"
-                    "Local Coastal Processes (OTHER)"
-                    "Terrestrial Surface Water Pollution"
-                    "Marine Pollution"
-                    "Commercial Fishing"
-                    "Soil Contamination"
-                    "Demand for Resource Access"
-                    "Enforcement: Environmental Protection"])
-
-(def state-changes ["Benthos"
-                    "Cliff Systems"
-                    "Sea Water Quality"
-                    "Avoidance of Harmful Algal Blooms"
-                    "River Systems"
-                    "Wetlands"
-                    "Dune Systems"
-                    "Ecological Niches: Native Species"
-                    "Local Employment"
-                    "Community Cohesion"
-                    "Integrated Coastal Development"])
-
-(def impacts       ["Food Provision: Marine Organisms"
-                    "Food Provision: Terrestrial Agriculture"
-                    "Inshore Marine Productivity"
-                    "Bioremediation: Waste Processing and Removal"
-                    "Flood Protection: Storm surge/Tidal/Fluvial"
-                    "Sea-Level Rise Buffering"
-                    "Raw Material Provision"
-                    "Fresh Water Supply"
-                    "Marine Transport and Navigation"
-                    "Coastal Amenity: Leisure/Recreation"
-                    "Habitable Land: Secure Coastal Development"
-                    "Cultural Heritage"])
-
-(def responses     ["NGO Protest"
-                    "Civil Society Lobbying"
-                    "Voluntary Community Initiatives"
-                    "Champions"
-                    "Seek Investment: EU/National/Private"
-                    "Economic Diversification"
-                    "Increased commercial Exploitation"
-                    "Increased Exploitation: Other Marine Sp."
-                    "Individual Insurance Cover"
-                    "Local Authority Planning/Zoning"
-                    "Introduction/Enforcement of bye-laws"
-                    "Payment of EU Fines"
-                    "Construction of Coastal/Flood Defences"
-                    "Re-location away from coast"])
 
 (defn if-weight [weight] (if weight weight "0"))
 (defn url-weight [weight] (- (mod (Integer/parseInt (if-weight weight)) 7) 3))
@@ -145,9 +155,13 @@
 (defn edit-links [params nodes links]
   (clutch/with-db db
     (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
+          level (fn [concept] (if-let [l (first (filter #(some #{concept} (second %)) all-concepts))]
+                                (key l)
+                                ((keyword concept) (:concepts (clutch/get-document (params :id))))))
           g {}
           nodes-graph (reduce
-                       #(if (some #{(second %2)} drivers)
+                       #(case (level (second %2))
+                          nil
                           (assoc-in %1 [:drivers (first %2)]
                                     {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
                                      :shape :circle
@@ -157,46 +171,56 @@
                                      :style :filled
                                      :color "lightblue"
                                      :fillcolor "white"})
-                          (if (some #{(second %2)} responses)
-                            (assoc-in %1 [:responses (first %2)]
-                                      {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                       :shape :circle
-                                       :width "1"
-                                       :fixedsize :true
-                                       :fontsize "10"
-                                       :style :filled
-                                       :color "skyblue"
-                                       :fillcolor "white"})
-                            (if (some #{(second %2)} pressures) 
-                              (assoc-in %1 [:pressures (first %2)]
-                                        {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                         :shape :circle
-                                         :width "1"
-                                         :fixedsize :true
-                                         :fontsize "10"
-                                         :style :filled
-                                         :color "steelblue"
-                                         :fillcolor "white"})
-                              (if (some #{(second %2)} impacts) 
-                                (assoc-in %1 [:impacts (first %2)]
-                                          {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                           :shape :circle
-                                           :width "1"
-                                           :fixedsize :true
-                                           :fontsize "10"
-                                           :style :filled
-                                           :color "brown"
-                                           :fillcolor "white"})
-                                (if (some #{(second %2)} state-changes) 
-                                  (assoc-in %1 [:state-changes (first %2)]
-                                            {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                             :shape :circle
-                                             :width "1"
-                                             :fixedsize :true
-                                             :fontsize "10"
-                                             :style :filled
-                                             :color "beige"
-                                             :fillcolor "white"}))))))
+                          "Drivers"
+                          (assoc-in %1 [:drivers (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "lightblue"
+                                     :fillcolor "white"})
+                          "Responses"
+                          (assoc-in %1 [:responses (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "skyblue"
+                                     :fillcolor "white"})
+                          "Pressures"
+                          (assoc-in %1 [:pressures (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "steelblue"
+                                     :fillcolor "white"})
+                          "Welfares"
+                          (assoc-in %1 [:impacts (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "brown"
+                                     :fillcolor "white"})
+                          "State Changes"
+                          (assoc-in %1 [:state-changes (first %2)]
+                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
+                                     :shape :circle
+                                     :width "1"
+                                     :fixedsize :true
+                                     :fontsize "10"
+                                     :style :filled
+                                     :color "beige"
+                                     :fillcolor "white"}))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
                                      weight (if (= (class w) String) (num-weight w) w)]
@@ -246,7 +270,9 @@
           (clutch/update-document
            (merge doc
                   {:concepts (merge (:concepts doc)
-                                    {concept level})})))))
+                                    {concept level})
+                   :nodes (merge (:nodes doc)
+                                 {(encode-nodename concept) concept})})))))
   
 (defn edit-links-html [params]
   (clutch/with-db db
