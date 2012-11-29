@@ -123,7 +123,6 @@ abbr,acronym{
 	list-style:none;
 	position:absolute;
 	left:-9999px; /* Hide off-screen when not needed (this is more accessible than display:none;) */
-	display: inline-block;
 }
 #nav ul li{
 	padding-top:1px; /* Introducing a padding between the li and the a give the illusion spaced items */
@@ -138,14 +137,14 @@ abbr,acronym{
 	left:0; /* Bring back on-screen when needed */
 }
 #nav li:hover a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
-	float: left;
 	width: 20em;
 }
 #nav li .add-text {
-	background:#fff;
-	background:rgba(255,255,255,0);
 	display: none;
 	width: 100%;
+}
+#nav li:hover li:hover a {
+    float: left;;
 }
 #nav li:hover li:hover .add-text {
     display: block;

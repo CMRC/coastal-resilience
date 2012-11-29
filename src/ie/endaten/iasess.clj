@@ -152,12 +152,12 @@
       (clutch/put-document {:user email :nodes {} :links {}}))))
 
 
-(defn edit-links [params nodes links]
+(defn edit-links [params nodes links concepts]
   (clutch/with-db db
     (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
           level (fn [concept] (if-let [l (first (filter #(some #{concept} (second %)) all-concepts))]
                                 (key l)
-                                ((keyword concept) (:concepts (clutch/get-document (params :id))))))
+                                ((keyword concept) concepts)))
           g {}
           nodes-graph (reduce
                        #(case (level (second %2))
@@ -181,8 +181,8 @@
                                      :style :filled
                                      :color "lightblue"
                                      :fillcolor "white"})
-                          "Responses"
-                          (assoc-in %1 [:responses (first %2)]
+                          "Pressures"
+                          (assoc-in %1 [:pressures (first %2)]
                                     {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
                                      :shape :circle
                                      :width "1"
@@ -191,8 +191,8 @@
                                      :style :filled
                                      :color "skyblue"
                                      :fillcolor "white"})
-                          "Pressures"
-                          (assoc-in %1 [:pressures (first %2)]
+                          "State Changes"
+                          (assoc-in %1 [:state-changes (first %2)]
                                     {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
                                      :shape :circle
                                      :width "1"
@@ -209,17 +209,17 @@
                                      :fixedsize :true
                                      :fontsize "10"
                                      :style :filled
-                                     :color "brown"
+                                     :color "beige"
                                      :fillcolor "white"})
-                          "State Changes"
-                          (assoc-in %1 [:state-changes (first %2)]
+                          "Responses"
+                          (assoc-in %1 [:responses (first %2)]
                                     {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
                                      :shape :circle
                                      :width "1"
                                      :fixedsize :true
                                      :fontsize "10"
                                      :style :filled
-                                     :color "beige"
+                                     :color "brown"
                                      :fillcolor "white"}))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
@@ -303,6 +303,14 @@
                              m)
                           {}
                           models)))
+          concepts (->
+                 (:concepts doc)
+                 (merge
+                  (reduce #(let [d (clutch/get-document (name (first %2)))
+                                 m (merge %1 (:concepts d))]
+                             m)
+                          {}
+                          models)))
           losers (map #(:user (:value %)) (clutch/get-view "users" :by-user))
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
@@ -329,6 +337,14 @@
                                              {(:id (first adduser)) (params "model")})}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
+        "more" (let
+                   [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
+                 (clutch/update-document
+                  (merge doc
+                         {:notes (merge (:notes doc)
+                                        {(encode-nodename (params "element")) (params "more")})}))
+                 {:status 303
+                  :headers {"Location" (str (base-path params) "/mode/edit")}})
         "delete"   (do
                      (clutch/update-document
                       (merge doc
@@ -445,8 +461,13 @@
                                                                    "\")")} concept])
                                           (form-to {:class "add-text"}
                                                    [:get (str (base-path params) "/mode/more")]
+                                                   (hidden-field "element" concept)
                                                    [:a
-                                                    (text-field "more" "additional text")]))) level)
+                                                    (text-field "more"
+                                                                (if-let [more ((keyword concept) (:notes doc))]
+                                                                  more
+                                                                  "Additional text..."))])))
+                                level)
                            [:li [:a {:href "#"} "Custom..."]
                             (form-to {:class "add-text" :id level :autocomplete "off"}
                                      [:post (str (base-path params) "/mode/addnew")]
@@ -472,7 +493,7 @@
                      (submit-button "Add"))]]
           [:div {:id "pane"}
            [:div {:id "graph"}
-            (edit-links (assoc-in params [:format] "img") nodes links)]
+            (edit-links (assoc-in params [:format] "img") nodes links concepts)]
            [:div {:id "bar"}
             (edit-links-html (assoc-in params [:mode] "bar"))
             "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923\"></iframe>"]]
@@ -481,9 +502,6 @@
   ;; define routes
   (defroutes webservice
   ;;links for editing
-  (GET "/iasess/:id/:format/edit/:node" {params :params} (edit-links params))
-  (GET "/iasess/:id/:format/edit/:tail/:node" {params :params} (edit-links params))
-  (GET "/iasess/:id/:format/edit/:tail/:node/:weight" {params :params} (edit-links params))
   (GET "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
   (GET "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
   (POST "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
