@@ -429,10 +429,10 @@
                          .getPlot
                          .getDomainAxis
                          (.setCategoryLabelPositions
-                          (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))
+                          (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
                 out-stream (ByteArrayOutputStream.)
                 in-stream (do
-                            (incanter/save chart out-stream :width 600 :height 300)
+                            (incanter/save chart out-stream :width 600 :height 150)
                             (ByteArrayInputStream. 
                              (.toByteArray out-stream)))]
             (exportChartAsSVG chart))
@@ -485,7 +485,8 @@
                             (form-to {:class "add-text" :id level :autocomplete "off"}
                                      [:post (str (base-path params) "/mode/addnew")]
                                       (hidden-field "level" menustr)
-                                      [:a (text-field "element" "")])]]))
+                                      [:a {:onmouseover
+                                           "infotext(\"Information Panel: Concept name (Enter)\")"}(text-field "element" "")])]]))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
@@ -511,7 +512,7 @@
            [:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
                      :marginwidth "0" :src
                      "http://www.arcgis.com/home/webmap/embedViewer.html?
-webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923"}]
+webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
            [:div {:id "bar"}
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))]]
