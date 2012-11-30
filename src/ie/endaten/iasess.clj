@@ -243,8 +243,8 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :ranksep "1.0" :stylesheet "/iasess/css/style.css"
-                                 :ratio :expand}]
+          links-subgraph (into [{:splines :true :stylesheet "/iasess/css/style.css"
+                                 :size "12,7"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
@@ -424,6 +424,7 @@
                 chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
                                              :y-label "")
                         (chart/set-theme (StandardChartTheme. "theme"))
+                        (.setBackgroundPaint java.awt.Color/lightGray)
                         (->
                          .getPlot
                          .getDomainAxis
@@ -431,7 +432,7 @@
                           (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))
                 out-stream (ByteArrayOutputStream.)
                 in-stream (do
-                            (incanter/save chart out-stream :width 600 :height 400)
+                            (incanter/save chart out-stream :width 600 :height 300)
                             (ByteArrayInputStream. 
                              (.toByteArray out-stream)))]
             (exportChartAsSVG chart))
@@ -448,12 +449,14 @@
           [:style {:type "text/css"} "@import \"/iasess/css/style.css\";"]]
          [:body
           [:ul {:id "nav"}
+           [:li [:a "File"]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#"} menustr]
                           [:ul
                            (map (fn [concept]
                                   (vector :li
-                                          (form-to {:id (encode-nodename concept)}
+                                          (form-to {:id (encode-nodename concept)
+                                                    :class "concept"}
                                                    [:post (str (base-path params) "/mode/add")]
                                                    (hidden-field "element" concept)
                                                    [:a {:href (str "javascript: submitform(\""
@@ -477,7 +480,8 @@
                  pressures "Pressures"
                  state-changes "State Changes"
                  impacts "Welfares"
-                 responses "Responses"})]
+                 responses "Responses"})
+           [:li [:a [:b "i"] "asess:coast"]]]
           [:div
            [:div {:class "menu"}
             (form-to [:get (str (base-path params) "/mode/download")]
@@ -494,9 +498,9 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
+           "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923\"></iframe>"
            [:div {:id "bar"}
-            (edit-links-html (assoc-in params [:mode] "bar"))
-            "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923\"></iframe>"]]
+            (edit-links-html (assoc-in params [:mode] "bar"))]]
           [:script {:src "/iasess/js/script.js"}]])))))
   
   ;; define routes

@@ -22,24 +22,30 @@ svg {
 #pane {
     clear: both;
     width: 100%;
-    height: 100%
 }
 #graph {
-    float: left;
-    width: 1000px;
-    height: 100%;
+    float: right;
+    width: 50%;
+    height: 700px;
 }
 #bar {
-    width: 800px;
+    width: 100%;
     height: 300px;
-    margin-left: 30;
-    float: left;
+    clear: both;
+    background: silver;
 }
 #bar svg {
     height: 300px;
+    margin-left:100px;
+    margin-right:auto;
+    width:70%;
 }
-#bar iframe {
-    height: 300px;
+#bar svg g g {
+    fill: darkgrey;
+}
+#pane iframe {
+    height: 700px;
+    width: 50%
 }
 .menu {
     clear: both;
@@ -102,17 +108,30 @@ abbr,acronym{
 	float:left;
 	margin-right:10px;
 	position:relative;
+	width: 13%;
+}
+#nav li:last-child {
+    width: 18%;
+    background: lightblue;	
+    text-align: right;
+}
+#nav li:last-child a {
+    background: lightblue;
+    color: steelblue;		
+}
+#nav li:last-child a b{
+    color: beige;	
 }
 #nav a{
 	display:block;
 	padding:5px;
 	color:#fff;
-	background:#7CB7C6;
+	background:steelblue;
 	text-decoration:none;
 }
 #nav a:hover{
 	color:#fff;
-	background:#DCD8C2;
+	background:blue;
 	text-decoration: none;
 }
 
@@ -138,13 +157,17 @@ abbr,acronym{
 }
 #nav li:hover a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
 	width: 20em;
+	background:lightblue;
 }
 #nav li .add-text {
 	display: none;
 	width: 100%;
 }
 #nav li:hover li:hover a {
-    float: left;;
+    float: left;
+}
+#nav li ul li:hover a:hover{
+    background:beige;
 }
 #nav li:hover li:hover .add-text {
     display: block;
@@ -156,7 +179,7 @@ abbr,acronym{
 	text-decoration:none;
 }
 #nav li:hover ul li a:hover{ /* Here we define the most explicit hover states--what happens when you hover each individual link. */
-	background:#7CB7C6;
+	background:#lightblue;
 }
 
 
