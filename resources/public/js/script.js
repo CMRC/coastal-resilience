@@ -55,6 +55,7 @@ document.body.addEventListener('click',function(e){
 		 });
 	    document.body.appendChild(menu);
 	    fromNode = null;
+	    infotext("Information Panel: Select a connection strength, positive or negative, or delete this link. Refresh browser to cancel operation");
 	}
 	else {
 	    fromNode = e.target.parentNode.firstChild.firstChild.nodeValue;
@@ -87,11 +88,6 @@ document.body.addEventListener('click',function(e){
 		n.setAttribute('y1',current.y);
 		n.setAttribute('x2',0);
 		n.setAttribute('y2',0);
-		// lg.setAttribute('transform',
-		// 	       ' translate(' + elementStart.x + ',' + elementStart.y + ')' + 
-		// 	       ' scale(' + Math.sqrt((pt.x * pt.x) + (pt.y * pt.y)) + ') ' +
-		// 	       '
-		//rotate(' + (((180 * Math.atan(pt.y / pt.x)) / Math.PI) - 45) + ')');
 	    };
 	    document.body.addEventListener('mousemove',onmove,false);
 	}
@@ -100,7 +96,8 @@ document.body.addEventListener('click',function(e){
 },false);
 
 document.body.addEventListener('contextmenu',function(e){
-    if(e.target.parentNode.getAttribute('class') == 'node')
+    if(e.target.parentNode.getAttribute('class') == 'node' ||
+       e.target.parentNode.getAttribute('class') == 'edge')
     {
 	var deleteurl = 'delete/' + e.target.parentNode.firstChild.firstChild.nodeValue;
 	var deletelink = document.createElementNS(xhtmlNS,'a');
@@ -139,10 +136,11 @@ svg.addEventListener('mouseover',function(e){
 		m = m.nextSibling;
 	    }
 	} else {
-	    infotext("Information Panel: Mouse over a node to connect to " + fromNode);
+	    infotext("Information Panel: Mouse over a node to connect to " + fromNode
+		    + " or refresh your browser to cancel operation");
 	}
     } else {
-	infotext("Information Panel: Select a node to begin connecting");
+	infotext("Information Panel: Select a node to begin connecting. Right click on node to delete");
     }
 },false);
 
