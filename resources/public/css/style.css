@@ -35,7 +35,7 @@ svg {
     background: silver;
 }
 #bar svg {
-    height: 300px;
+    height: 250px;
     margin-left:100px;
     margin-right:auto;
     width:70%;
@@ -110,16 +110,16 @@ abbr,acronym{
 	position:relative;
 	width: 13%;
 }
-#nav li:last-child {
+#nav > li:last-child {
     width: 18%;
     background: lightblue;	
     text-align: right;
 }
-#nav li:last-child a {
+#nav > li:last-child a {
     background: lightblue;
     color: steelblue;		
 }
-#nav li:last-child a b{
+#nav > li:last-child a b{
     color: beige;	
 }
 #nav a{

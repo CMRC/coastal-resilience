@@ -451,7 +451,9 @@
           [:ul {:id "nav"}
            [:li [:a "File"]]
            (map (fn [[level menustr]]
-                  (vector :li [:a {:href "#"} menustr]
+                  (vector :li [:a {:href "#":onmouseover
+                                   (str "infotext(\"Information Panel: Add "
+                                        menustr "\")")} menustr]
                           [:ul
                            (map (fn [concept]
                                   (vector :li
@@ -461,17 +463,25 @@
                                                    (hidden-field "element" concept)
                                                    [:a {:href (str "javascript: submitform(\""
                                                                    (encode-nodename concept)
-                                                                   "\")")} concept])
+                                                                   "\")")
+                                                        :onmouseover
+                                                        (str "infotext(\"Information Panel: Add "
+                                                             menustr " concept " concept "\")")} concept])
                                           (form-to {:class "add-text"}
                                                    [:get (str (base-path params) "/mode/more")]
                                                    (hidden-field "element" concept)
                                                    [:a
+                                                    {:onmouseover
+                                                     "infotext(\"Information Panel: Add your own text\")"}
                                                     (text-field "more"
                                                                 (if-let [more ((keyword concept) (:notes doc))]
                                                                   more
                                                                   "Additional text..."))])))
                                 level)
-                           [:li [:a {:href "#"} "Custom..."]
+                           [:li [:a {:href "#"
+                                     :onmouseover
+                                     (str "infotext(\"Information Panel: Add your own "
+                                          menustr " concept\")")} "Custom"]
                             (form-to {:class "add-text" :id level :autocomplete "off"}
                                      [:post (str (base-path params) "/mode/addnew")]
                                       (hidden-field "level" menustr)
@@ -498,8 +508,12 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           "<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" src=\"http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923\"></iframe>"
+           [:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
+                     :marginwidth "0" :src
+                     "http://www.arcgis.com/home/webmap/embedViewer.html?
+webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-10.4112,52.085,-10.135,52.1923"}]
            [:div {:id "bar"}
+            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))]]
           [:script {:src "/iasess/js/script.js"}]])))))
   

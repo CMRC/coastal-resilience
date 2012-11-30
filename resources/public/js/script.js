@@ -1,5 +1,6 @@
 //view-source:http://phrogz.net/svg/drag_under_transformation.xhtml
-var svg   = document.getElementsByTagName('svg')[0];
+var svg   = document.getElementById('graph').getElementsByTagName('svg')[0];
+var map   = document.getElementById('map');
 var svgNS = svg.getAttribute('xmlns');
 var xlinkNS = 'http://www.w3.org/1999/xlink';
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
@@ -121,22 +122,34 @@ document.body.addEventListener('contextmenu',function(e){
 },false)
 
 
-document.body.addEventListener('mouseover',function(e){
-    if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
-       && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
-	m = e.target.parentNode.firstChild;
-	while(m) {
-	    if(m.tagName == 'ellipse') {
-		var oldFill = m.getAttribute('fill');
-		var oldStroke = m.getAttribute('stroke');
-		m.setAttribute('fill',oldStroke);
-		m.setAttribute('stroke',oldFill);
+svg.addEventListener('mouseover',function(e){
+    if(fromNode) {
+	if (e.target.parentNode.getAttribute('class') == 'node'
+	    && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
+	    m = e.target.parentNode.firstChild;
+	    infotext("Information Panel: Click to connect " + fromNode + " to " +
+		     m.firstChild.nodeValue);
+	    while(m) {
+		if(m.tagName == 'ellipse') {
+		    var oldFill = m.getAttribute('fill');
+		    var oldStroke = m.getAttribute('stroke');
+		    m.setAttribute('fill',oldStroke);
+		    m.setAttribute('stroke',oldFill);
+		}
+		m = m.nextSibling;
 	    }
-	    m = m.nextSibling;
+	} else {
+	    infotext("Information Panel: Mouse over a node to connect to " + fromNode);
 	}
+    } else {
+	infotext("Information Panel: Select a node to begin connecting");
     }
 },false);
 
+map.addEventListener('mouseover',function(e){
+    infotext("Information Panel: Drag to pan, scroll button to zoom, or select a feature for more information");
+},false);
+		     
 document.body.addEventListener('mouseout',function(e){
     if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
        && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
@@ -156,5 +169,10 @@ document.body.addEventListener('mouseout',function(e){
 function submitform(fname)
 {
     document.getElementById(fname).submit();
+}
+
+function infotext(text)
+{
+    document.getElementById("info-text").innerHTML = text;
 }
 
