@@ -1,14 +1,17 @@
 (ns ie.endaten.iasess
   (:gen-class)
-  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
-        hiccup.core, hiccup.form, hiccup.page
-        dorothy.core)
-  (:require [compojure.route :as route]
+  (:require [clojure.data.json :as json]
+            [compojure.route :as route]
+            [compojure.handler :as handler]
             [clojure.xml :as xml] 
             [clojure.math.numeric-tower :as math]
             [com.ashafa.clutch :as clutch]
             [incanter.core :as incanter]
-            [incanter.charts :as chart])
+            [incanter.charts :as chart]
+            [hiccup.form-helpers :as form]
+            [hiccup.page-helpers :as page])
+  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
+        dorothy.core)
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream
                     OutputStreamWriter)
@@ -277,8 +280,8 @@
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
+          doc (create-user (params :id))
           p (println params)
-          doc (clutch/get-document (params :id))
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
                                                         (* (num-weight (:weight s)) (if-count s)))
@@ -304,29 +307,29 @@
                           {}
                           models)))
           concepts (->
-                 (:concepts doc)
-                 (merge
-                  (reduce #(let [d (clutch/get-document (name (first %2)))
-                                 m (merge %1 (:concepts d))]
-                             m)
-                          {}
-                          models)))
+                    (:concepts doc)
+                    (merge
+                     (reduce #(let [d (clutch/get-document (name (first %2)))
+                                    m (merge %1 (:concepts d))]
+                                m)
+                             {}
+                             models)))
           losers (map #(:user (:value %)) (clutch/get-view "users" :by-user))
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
       (case (params :mode)
-        "login"    (let [id (:_id (create-user (params "email")))]
+        "login"    (let [id (:_id (create-user (params :email)))]
                      {:status 303
                       :headers {"Location" (str (base-path (assoc params :id id)) "/mode/edit")}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
                              {:nodes (merge nodes
-                                            {(encode-nodename (params "element")) (params "element")})}))
+                                            {(encode-nodename (params :element)) (params :element)})}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addnew"   (do
-                     (new-concept (params :id) (params "element") (params "level"))
+                     (new-concept (params :id) (params :element) (params "level"))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addmodel" (let
@@ -342,7 +345,7 @@
                  (clutch/update-document
                   (merge doc
                          {:notes (merge (:notes doc)
-                                        {(encode-nodename (params "element")) (params "more")})}))
+                                        {(encode-nodename (params :element)) (params "more")})}))
                  {:status 303
                   :headers {"Location" (str (base-path params) "/mode/edit")}})
         "delete"   (do
@@ -442,14 +445,16 @@
 <h4>Add a graph..</h3>
 <p>use the selector next to the Login to ")
         "edit"
-        (xhtml
+        (page/xhtml
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
-          [:style {:type "text/css"} "@import \"/iasess/css/style.css\";"]]
+          [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
           [:ul {:id "nav"}
-           [:li [:a "File"]]
+           [:li [:a "File"]
+            [:ul
+             [:li [:a {:href "/logout"} "Logout"]]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
                                    (str "infotext(\"Information Panel: Add "
@@ -457,36 +462,36 @@
                           [:ul
                            (map (fn [concept]
                                   (vector :li
-                                          (form-to {:id (encode-nodename concept)
-                                                    :class "concept"}
-                                                   [:post (str (base-path params) "/mode/add")]
-                                                   (hidden-field "element" concept)
-                                                   [:a {:href (str "javascript: submitform(\""
-                                                                   (encode-nodename concept)
-                                                                   "\")")
-                                                        :onmouseover
-                                                        (str "infotext(\"Information Panel: Add "
-                                                             menustr " concept " concept "\")")} concept])
-                                          (form-to {:class "add-text"}
-                                                   [:get (str (base-path params) "/mode/more")]
-                                                   (hidden-field "element" concept)
-                                                   [:a
-                                                    {:onmouseover
-                                                     "infotext(\"Information Panel: Add your own text\")"}
-                                                    (text-field "more"
-                                                                (if-let [more ((keyword concept) (:notes doc))]
-                                                                  more
-                                                                  "Additional text..."))])))
+                                          (form/form-to {:id (encode-nodename concept)
+                                                         :class "concept"}
+                                                        [:post (str (base-path params) "/mode/add")]
+                                                        (form/hidden-field "element" concept)
+                                                        [:a {:href (str "javascript: submitform(\""
+                                                                        (encode-nodename concept)
+                                                                        "\")")
+                                                             :onmouseover
+                                                             (str "infotext(\"Information Panel: Add "
+                                                                  menustr " concept " concept "\")")} concept])
+                                          (form/form-to {:class "add-text"}
+                                                        [:get (str (base-path params) "/mode/more")]
+                                                        (form/hidden-field "element" concept)
+                                                        [:a
+                                                         {:onmouseover
+                                                          "infotext(\"Information Panel: Add your own text\")"}
+                                                         (form/text-field "more"
+                                                                          (if-let [more ((keyword concept) (:notes doc))]
+                                                                            more
+                                                                            "Additional text..."))])))
                                 level)
                            [:li [:a {:href "#"
                                      :onmouseover
                                      (str "infotext(\"Information Panel: Add your own "
                                           menustr " concept\")")} "Custom"]
-                            (form-to {:class "add-text" :id level :autocomplete "off"}
+                            (form/form-to {:class "add-text" :id level :autocomplete "off"}
                                      [:post (str (base-path params) "/mode/addnew")]
-                                      (hidden-field "level" menustr)
+                                      (form/hidden-field "level" menustr)
                                       [:a {:onmouseover
-                                           "infotext(\"Information Panel: Concept name (Enter)\")"}(text-field "element" "")])]]))
+                                           "infotext(\"Information Panel: Concept name (Enter)\")"}(form/text-field "element" "")])]]))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
@@ -495,17 +500,17 @@
            [:li [:a [:b "i"] "asess:coast"]]]
           [:div
            [:div {:class "menu"}
-            (form-to [:get (str (base-path params) "/mode/download")]
-                     (submit-button "Download"))
-            (form-to [:post (str (base-path params) "/mode/login")]
-                     (text-field "email"
-                                 (if-let [doc (clutch/get-document (params :id))]
-                                   (:user doc)
-                                   ""))
-                     (submit-button "Login"))
-            (form-to [:post (str (base-path params) "/mode/addmodel")]
-                     (drop-down "model" users)
-                     (submit-button "Add"))]]
+            (form/form-to [:get (str (base-path params) "/mode/download")]
+                          (form/submit-button "Download"))
+            (form/form-to [:post (str (base-path params) "/mode/login")]
+                          (form/text-field "email"
+                                      (if-let [doc (clutch/get-document (params :id))]
+                                        (:user doc)
+                                        ""))
+                          (form/submit-button "Login"))
+            (form/form-to [:post (str (base-path params) "/mode/addmodel")]
+                          (form/drop-down "model" users)
+                          (form/submit-button "Add"))]]
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
@@ -518,8 +523,8 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
             (edit-links-html (assoc-in params [:mode] "bar"))]]
           [:script {:src "/iasess/js/script.js"}]])))))
   
-  ;; define routes
-  (defroutes webservice
+;; define routes
+(defroutes webservice
   ;;links for editing
   (GET "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
   (GET "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
@@ -535,4 +540,4 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params webservice) {:port 8000}))
+  (run-jetty (wrap-params webservice) {:port 8088}))

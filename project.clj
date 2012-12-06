@@ -1,9 +1,10 @@
 (defproject iasess "0.0.1"
   :description "iasess prototype"
-  :dependencies [[org.clojure/clojure "1.4.0"]
+  :dependencies [[org.clojure/data.json "0.2.0"]
+                 [org.clojure/clojure "1.3.0"]
 		 [compojure "1.1.3"]
 		 [ring "1.1.6"]
-		 [hiccup "1.0.1"]
+		 [hiccup "0.3.8"]
                  [com.ashafa/clutch "0.4.0-RC1"]
                  [dorothy "0.0.3"]
                  [incanter "1.4.0"]
