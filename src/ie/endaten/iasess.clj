@@ -2,14 +2,18 @@
   (:gen-class)
   (:require [clojure.data.json :as json]
             [compojure.route :as route]
+            [compojure.core :as compojure]
+            [cemerick.friend :as friend]
+            (cemerick.friend [workflows :as workflows]
+                             [credentials :as creds])
             [compojure.handler :as handler]
             [clojure.xml :as xml] 
             [clojure.math.numeric-tower :as math]
             [com.ashafa.clutch :as clutch]
             [incanter.core :as incanter]
             [incanter.charts :as chart]
-            [hiccup.form-helpers :as form]
-            [hiccup.page-helpers :as page])
+            [hiccup.form :as form]
+            [hiccup.page :as page])
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
         dorothy.core)
   (:import (java.io ByteArrayOutputStream
@@ -454,7 +458,9 @@
           [:ul {:id "nav"}
            [:li [:a "File"]
             [:ul
-             [:li [:a {:href "/logout"} "Logout"]]]]
+             [:li [:a {:href "/iasess/logout"} "Logout"]]
+             [:li [:a {:href "/iasess/login"} "Login"]]
+             [:li [:a {:href "/iasess/mode/download")} "Download"]]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
                                    (str "infotext(\"Information Panel: Add "
@@ -497,17 +503,9 @@
                  state-changes "State Changes"
                  impacts "Welfares"
                  responses "Responses"})
-           [:li [:a [:b "i"] "asess:coast"]]]
+           [:li [:a [:span {:id "user"} "Welcome: " (params :id)] [:span [:b "i"] "asess:coast"]]]]
           [:div
-           [:div {:class "menu"}
-            (form/form-to [:get (str (base-path params) "/mode/download")]
-                          (form/submit-button "Download"))
-            (form/form-to [:post (str (base-path params) "/mode/login")]
-                          (form/text-field "email"
-                                      (if-let [doc (clutch/get-document (params :id))]
-                                        (:user doc)
-                                        ""))
-                          (form/submit-button "Login"))
+           #_[:div {:class "menu"}
             (form/form-to [:post (str (base-path params) "/mode/addmodel")]
                           (form/drop-down "model" users)
                           (form/submit-button "Add"))]]
@@ -522,22 +520,61 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))]]
           [:script {:src "/iasess/js/script.js"}]])))))
-  
+
+(defn auth-edit-links-html [req]
+  (friend/authorize #{"clad.models.couch/user"}
+                    (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
 ;; define routes
 (defroutes webservice
   ;;links for editing
-  (GET "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
-  (GET "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
-  (POST "/iasess/:id/mode/:mode" {params :params} (edit-links-html params))
-  (POST "/iasess/mode/:mode" {params :params} (edit-links-html (assoc params "id" "guest")))
-  (GET "/iasess/:id/mode/:mode/:node" {params :params} (edit-links-html params))
-  (GET "/iasess/:id/mode/:mode/:tail/:node" {params :params} (edit-links-html params))
-  (GET "/iasess/:id/mode/:mode/:tail/:node/:weight" {params :params} (edit-links-html params))
+  (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
+  (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
+  (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
+  (GET "/iasess/login" request (page/html5 (form/form-to [:post "/iasess/login"]
+                                                         (form/text-field "username")
+                                                         (form/text-field "password")
+                                                         (form/submit-button "Login"))))
   (GET "/iasess" {params :params} (edit-links-html (assoc params :id "guest" :mode "edit")))
+  (friend/logout (ANY "/iasess/logout" request (ring.util.response/redirect "/iasess")))
   
   (resources "/iasess"))
+
+(defn get-users []
+  (try
+    (clutch/with-db "climate_dev"
+      (reduce #(assoc %1 (:key %2) (:value %2)) {} (clutch/get-view "users" :users)))
+    ;;for testing locally without the database we supply a default password
+    (catch java.io.IOException e {"local" {:username "local"
+                                           :password (creds/hash-bcrypt "local")
+                                           :roles #{::user}}})))
+
+(def users (get-users))
+
+(def secured-app
+  (handler/site
+   (friend/authenticate
+    webservice
+    {:credential-fn (partial creds/bcrypt-credential-fn users) 
+     :workflows [(workflows/interactive-form)] 
+     :login-uri "/iasess/login" 
+     :unauthorized-redirect-uri "/iasess/login" 
+     :default-landing-uri "/iasess"})))
+
 
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params webservice) {:port 8088}))
+  (run-jetty (wrap-params secured-app) {:port 8088}))
+
+
+#_(pre-route "/iasess" {:as req}
+           (friend/authorize
+            #{"clad.models.couch/user"}
+            (resp/redirect
+             (str "/iasess/"
+                  (get-in req [:session :cemerick.friend/identity
+                               :current])
+                  "/mode/edit"))))
+
+#_(pre-route "/iasess/*" {:as req}
+       (friend/authenticated (println req)))    
