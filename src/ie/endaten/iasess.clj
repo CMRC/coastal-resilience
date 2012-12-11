@@ -58,7 +58,7 @@
     (.close outputStream)
     outputStream))
     
-(defn base-path [params] (str "/iasess" (when (params :id) "/") (params :id)))
+(defn base-path [params] "/iasess")
 
 (defn encode-nodename
   [nodename]
@@ -271,15 +271,14 @@
                         {:map (fn [doc] [[(:user doc) doc]])}}))))
 ;;(save-views)
 
-(defn new-concept [user concept level]
+(defn new-concept [user concept level doc]
   (clutch/with-db db
-    (let [doc (clutch/get-document user)]
-          (clutch/update-document
-           (merge doc
-                  {:concepts (merge (:concepts doc)
-                                    {concept level})
-                   :nodes (merge (:nodes doc)
-                                 {(encode-nodename concept) concept})})))))
+    (clutch/update-document
+     (merge doc
+            {:concepts (merge (:concepts doc)
+                              {concept level})
+             :nodes (merge (:nodes doc)
+                           {(encode-nodename concept) concept})}))))
   
 (defn edit-links-html [params]
   (clutch/with-db db
@@ -333,7 +332,7 @@
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addnew"   (do
-                     (new-concept (params :id) (params :element) (params "level"))
+                     (new-concept (params :id) (params :element) (params :level) doc)
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addmodel" (let
@@ -459,8 +458,7 @@
            [:li [:a "File"]
             [:ul
              [:li [:a {:href "/iasess/logout"} "Logout"]]
-             [:li [:a {:href "/iasess/login"} "Login"]]
-             [:li [:a {:href "/iasess/mode/download")} "Download"]]]]
+             [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
                                    (str "infotext(\"Information Panel: Add "
@@ -504,11 +502,6 @@
                  impacts "Welfares"
                  responses "Responses"})
            [:li [:a [:span {:id "user"} "Welcome: " (params :id)] [:span [:b "i"] "asess:coast"]]]]
-          [:div
-           #_[:div {:class "menu"}
-            (form/form-to [:post (str (base-path params) "/mode/addmodel")]
-                          (form/drop-down "model" users)
-                          (form/submit-button "Add"))]]
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
@@ -518,24 +511,32 @@
 webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
            [:div {:id "bar"}
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-            (edit-links-html (assoc-in params [:mode] "bar"))]]
+            (edit-links-html (assoc-in params [:mode] "bar"))
+            (when (= (params :id) "guest")
+              [:div {:id "login"}
+               (if (params :login_failed) "Wrong username or password"
+               "You are accessing iasess as a guest.Your changes will be overwritten by another user.
+               Please login or register in order to create your own model.")
+               (form/form-to [:post "/iasess/login"]
+                             (form/text-field "username")
+                             (form/password-field "password")
+                             (form/submit-button "Login"))])]]
           [:script {:src "/iasess/js/script.js"}]])))))
-
+  
 (defn auth-edit-links-html [req]
   (friend/authorize #{"clad.models.couch/user"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
 ;; define routes
 (defroutes webservice
   ;;links for editing
+  (ANY "/iasess/login" request (edit-links-html (-> (:params request)
+                                                    (assoc :id "guest")
+                                                    (assoc :mode "edit"))))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
-  (GET "/iasess/login" request (page/html5 (form/form-to [:post "/iasess/login"]
-                                                         (form/text-field "username")
-                                                         (form/text-field "password")
-                                                         (form/submit-button "Login"))))
-  (GET "/iasess" {params :params} (edit-links-html (assoc params :id "guest" :mode "edit")))
-  (friend/logout (ANY "/iasess/logout" request (ring.util.response/redirect "/iasess")))
+  (GET "/iasess" request (ring.util.response/redirect "/iasess/mode/edit"))
+  (friend/logout (ANY "/iasess/logout" request (ring.util.response/redirect "/iasess/login")))
   
   (resources "/iasess"))
 
@@ -558,7 +559,7 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
      :workflows [(workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
-     :default-landing-uri "/iasess"})))
+     :default-landing-uri "/iasess/mode/edit"})))
 
 
 (defn -main
