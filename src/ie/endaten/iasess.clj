@@ -298,7 +298,6 @@
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
           doc (get-user (params :id))
-          p (println doc)
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
                                                         (* (num-weight (:weight s)) (if-count s)))
@@ -344,8 +343,6 @@
                       (merge doc
                              {:nodes (merge nodes
                                             {(encode-nodename (params :element)) (params :element)})}))
-                     (println "**nodes**" (merge nodes
-                                            {(encode-nodename (params :element)) (params :element)}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addnew"   (do
@@ -568,11 +565,16 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
   
   (resources "/iasess"))
 
+(def my-cred-fn [users]
+  (do
+    (println users)
+    (partial creds/bcrypt-credential-fn users))
+  
 (def secured-app
   (handler/site
    (friend/authenticate
     webservice
-    {:credential-fn (partial creds/bcrypt-credential-fn (get-users)) 
+    {:credential-fn (my-cred-fn (get-users)) 
      :workflows [(workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
