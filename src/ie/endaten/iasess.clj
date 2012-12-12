@@ -41,6 +41,11 @@
 (def default-format "matrix")
 (def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
 
+(defn get-users []
+  (try
+    (clutch/with-db db
+      (reduce #(assoc %1 (:key %2) (:value %2)) {} (clutch/get-view "all-users" :users)))))
+
 (defn exportChartAsSVG
   [chart]
   ;;Get a DOMImplementation and create an XML document
@@ -152,11 +157,14 @@
                             weight))
 (defn display-weight [weight] (str (num-weight weight)))
 
-(defn create-user [email]
+(defn get-user [email]
+  (:value (first (clutch/get-view "users" :by-user {:key email}))))
+
+(defn create-user [email password]
   (clutch/with-db db
-    (if-let [user (seq (clutch/get-view "users" :by-user {:key email}))]
-      (clutch/put-document (merge (:value (first user)) {:user email}))
-      (clutch/put-document {:user email :nodes {} :links {}}))))
+    (clutch/put-document {:user email :username email
+                          :password (creds/hash-bcrypt password)
+                          :roles #{::iasess}:nodes {} :links {}})))
 
 
 (defn edit-links [params nodes links concepts]
@@ -264,12 +272,17 @@
 
 (defn save-views []
   (clutch/with-db db
+    (clutch/save-view "all-users"
+                      (clutch/view-server-fns
+                       :clojure
+                       {:users
+                        {:map (fn [doc] (if (:username doc) [[(:username doc) doc]]))}}))
     (clutch/save-view "users"
                       (clutch/view-server-fns
                        :clojure
                        {:by-user
-                        {:map (fn [doc] [[(:user doc) doc]])}}))))
-;;(save-views)
+                        {:map (fn [doc] [[(:username doc) doc]])}}))))
+#_(save-views)
 
 (defn new-concept [user concept level doc]
   (clutch/with-db db
@@ -280,11 +293,12 @@
              :nodes (merge (:nodes doc)
                            {(encode-nodename concept) concept})}))))
   
+
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
-          doc (create-user (params :id))
-          p (println params)
+          doc (get-user (params :id))
+          p (println doc)
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
                                                         (* (num-weight (:weight s)) (if-count s)))
@@ -321,14 +335,17 @@
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
       (case (params :mode)
-        "login"    (let [id (:_id (create-user (params :email)))]
+        "adduser"  (do
+                     (create-user (params :username) (params :password))
                      {:status 303
-                      :headers {"Location" (str (base-path (assoc params :id id)) "/mode/edit")}})
+                      :headers {"Location" "/iasess/mode/edit"}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
                              {:nodes (merge nodes
                                             {(encode-nodename (params :element)) (params :element)})}))
+                     (println "**nodes**" (merge nodes
+                                            {(encode-nodename (params :element)) (params :element)}))
                      {:status 303
                       :headers {"Location" (str (base-path params) "/mode/edit")}})
         "addnew"   (do
@@ -458,7 +475,14 @@
            [:li [:a "File"]
             [:ul
              [:li [:a {:href "/iasess/logout"} "Logout"]]
-             [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
+             [:li [:a {:href "/iasess/mode/download"} "Download"]]
+             [:li [:a "Add User"]
+              (form/form-to {:id "adduser" :class "add-text"}
+                            [:post "/iasess/mode/adduser"]
+                            (form/hidden-field "password" "friend")
+                            [:a {:href (str "javascript: submitform(\""
+                                            "\")")}
+                            (form/text-field "username")])]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
                                    (str "infotext(\"Information Panel: Add "
@@ -515,18 +539,22 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
             (when (= (params :id) "guest")
               [:div {:id "login"}
                (if (params :login_failed) "Wrong username or password"
-               "You are accessing iasess as a guest.Your changes will be overwritten by another user.
-               Please login or register in order to create your own model.")
+                   "You are accessing iasess as a guest.Your changes can be overwritten by other users.
+               Please login in order to create your own model.")
                (form/form-to [:post "/iasess/login"]
                              (form/text-field "username")
                              (form/password-field "password")
-                             (form/submit-button "Login"))])]]
-          [:script {:src "/iasess/js/script.js"}]])))))
+                             (form/submit-button "Login"))
+               #_(form/form-to [:post "/iasess/register"]
+                             (form/text-field "username")
+                             (form/password-field "password")
+                             (form/submit-button "Register"))])]]
+           [:script {:src "/iasess/js/script.js"}]])))))
   
 (defn auth-edit-links-html [req]
-  (friend/authorize #{"clad.models.couch/user"}
+  (friend/authorize #{"ie.endaten.iasess/iasess"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
-;; define routes
+
 (defroutes webservice
   ;;links for editing
   (ANY "/iasess/login" request (edit-links-html (-> (:params request)
@@ -540,42 +568,20 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
   
   (resources "/iasess"))
 
-(defn get-users []
-  (try
-    (clutch/with-db "climate_dev"
-      (reduce #(assoc %1 (:key %2) (:value %2)) {} (clutch/get-view "users" :users)))
-    ;;for testing locally without the database we supply a default password
-    (catch java.io.IOException e {"local" {:username "local"
-                                           :password (creds/hash-bcrypt "local")
-                                           :roles #{::user}}})))
-
-(def users (get-users))
-
 (def secured-app
   (handler/site
    (friend/authenticate
     webservice
-    {:credential-fn (partial creds/bcrypt-credential-fn users) 
+    {:credential-fn (partial creds/bcrypt-credential-fn (get-users)) 
      :workflows [(workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})))
 
+(defonce server (run-jetty (wrap-params secured-app) {:port 8088}))
 
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params secured-app) {:port 8088}))
+  (.start server))
 
-
-#_(pre-route "/iasess" {:as req}
-           (friend/authorize
-            #{"clad.models.couch/user"}
-            (resp/redirect
-             (str "/iasess/"
-                  (get-in req [:session :cemerick.friend/identity
-                               :current])
-                  "/mode/edit"))))
-
-#_(pre-route "/iasess/*" {:as req}
-       (friend/authenticated (println req)))    
