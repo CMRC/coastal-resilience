@@ -585,10 +585,8 @@
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})))
 
-(defonce server (run-jetty (wrap-params secured-app) {:port 8088}))
-
 (defn -main
   "Run the jetty server."
   [& args]
-  (.start server))
+  (run-jetty (wrap-params secured-app) {:port 8088}))
 
