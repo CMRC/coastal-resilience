@@ -158,13 +158,16 @@
 (defn display-weight [weight] (str (num-weight weight)))
 
 (defn get-user [email]
-  (:value (first (clutch/get-view "users" :by-user {:key email}))))
+  (clutch/with-db db
+    (println "email: " email)
+    (println "users: " (clutch/get-view "users" :by-user {:key email}))
+    (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
 (defn create-user [email password]
   (clutch/with-db db
     (clutch/put-document {:user email :username email
                           :password (creds/hash-bcrypt password)
-                          :roles #{::iasess}:nodes {} :links {}})))
+                          :roles #{::iasess} :nodes {} :links {}})))
 
 
 (defn edit-links [params nodes links concepts]
@@ -334,10 +337,6 @@
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
       (case (params :mode)
-        "adduser"  (do
-                     (create-user (params :username) (params :password))
-                     {:status 303
-                      :headers {"Location" "/iasess/mode/edit"}})
         "add"      (do
                      (clutch/update-document
                       (merge doc
@@ -471,15 +470,16 @@
           [:ul {:id "nav"}
            [:li [:a "File"]
             [:ul
-             [:li [:a {:href "/iasess/logout"} "Logout"]]
-             [:li [:a {:href "/iasess/mode/download"} "Download"]]
-             [:li [:a "Add User"]
-              (form/form-to {:id "adduser" :class "add-text"}
-                            [:post "/iasess/mode/adduser"]
-                            (form/hidden-field "password" "friend")
-                            [:a {:href (str "javascript: submitform(\""
-                                            "\")")}
-                            (form/text-field "username")])]]]
+             (when-not (= (params :id) "guest")
+                 [:div [:li [:a {:href "/iasess/logout"} "Logout"]]
+                  [:li [:a "Add User"]
+                   (form/form-to {:id "adduser" :class "add-text"}
+                                 [:post "/iasess/mode/adduser"]
+                                 (form/hidden-field "password" "friend")
+                                 [:a {:href (str "javascript: submitform(\""
+                                                 "\")")}
+                                  (form/text-field "username")])]])
+             [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
                                    (str "infotext(\"Information Panel: Add "
@@ -528,8 +528,7 @@
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
            [:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
                      :marginwidth "0" :src
-                     "http://www.arcgis.com/home/webmap/embedViewer.html?
-webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
+                     "http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-12.7473,51.7862,-3.9088,55.1142"}]
            [:div {:id "bar"}
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))
@@ -541,13 +540,10 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
                (form/form-to [:post "/iasess/login"]
                              (form/text-field "username")
                              (form/password-field "password")
-                             (form/submit-button "Login"))
-               #_(form/form-to [:post "/iasess/register"]
-                             (form/text-field "username")
-                             (form/password-field "password")
-                             (form/submit-button "Register"))])]]
-           [:script {:src "/iasess/js/script.js"}]])))))
-  
+                             (form/submit-button "Login"))])]]
+           [:script {:src "/iasess/js/script.js"}]])
+        {:status 303
+         :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 (defn auth-edit-links-html [req]
   (friend/authorize #{"ie.endaten.iasess/iasess"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
@@ -565,17 +561,26 @@ webmap=f865f4eeb9fa473485962d5d60613cba&amp;"}]
   
   (resources "/iasess"))
 
-(def my-cred-fn [users]
+(defn my-workflow [{:keys [uri request-method params]}]
   (do
-    (println users)
-    (partial creds/bcrypt-credential-fn users))
-  
+    (println params)
+    (when (and (= uri "/iasess/mode/adduser")
+               (= request-method :post))
+      (if (seq (get-user (params :username)))
+        (println "user" (params :username) "exists")
+        (do
+          (create-user (params :username) (params :password))
+          (workflows/make-auth {:username (params :username)
+                                :password (creds/hash-bcrypt (params :password))
+                                :roles #{"ie.endaten.iasess/iasess"}})
+          nil)))))
+
 (def secured-app
   (handler/site
    (friend/authenticate
     webservice
-    {:credential-fn (my-cred-fn (get-users)) 
-     :workflows [(workflows/interactive-form)] 
+    {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
+     :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})))
