@@ -39,6 +39,7 @@ svg {
     margin-left:100px;
     margin-right:auto;
     width:70%;
+    float: left;
 }
 #bar svg g g {
     fill: darkgrey;
@@ -55,7 +56,9 @@ svg {
 }
 .edge text {
 }
-
+.login {
+    float: left;
+}
 /*------------------------------------*\
 	RESET
 \*------------------------------------*/
@@ -122,6 +125,11 @@ abbr,acronym{
 #nav > li:last-child a b{
     color: beige;	
 }
+#user {
+    float: left;
+    color: black;
+}
+
 #nav a{
 	display:block;
 	padding:5px;
