@@ -475,10 +475,10 @@
                   [:li [:a "Add User"]
                    (form/form-to {:id "adduser" :class "add-text"}
                                  [:post "/iasess/mode/adduser"]
-                                 (form/hidden-field "password" "friend")
                                  [:a {:href (str "javascript: submitform(\""
                                                  "\")")}
-                                  (form/text-field "username")])]])
+                                  (form/text-field "username")
+                                  (form/hidden-field "password" "friend")])]])
              [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
            (map (fn [[level menustr]]
                   (vector :li [:a {:href "#":onmouseover
