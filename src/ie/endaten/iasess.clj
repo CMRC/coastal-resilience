@@ -10,6 +10,7 @@
             [clojure.xml :as xml] 
             [clojure.math.numeric-tower :as math]
             [com.ashafa.clutch :as clutch]
+            [com.ashafa.clutch.view-server :as view]
             [incanter.core :as incanter]
             [incanter.charts :as chart]
             [hiccup.form :as form]
@@ -30,7 +31,7 @@
            (org.apache.batik.dom GenericDOMImplementation)
            (org.apache.batik.svggen SVGGraphics2D)))
 
-#_(clutch/configure-view-server "resilience" (view-server-exec-string))
+#_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
 
 (def db "resilience")
 (def lowlight "grey")
@@ -544,15 +545,36 @@
            [:script {:src "/iasess/js/script.js"}]])
         {:status 303
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))
+
 (defn auth-edit-links-html [req]
   (friend/authorize #{"ie.endaten.iasess/iasess"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
 
+(defn login [request]
+        (page/html5
+         [:head
+          [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
+          [:script {:src "/iasess/js/script.js"}]
+          [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
+         [:body
+	  "Please login or register"
+	  [:div
+	   [:h3 "Login"]
+	  (form/form-to [:post "/iasess/login"]
+			(form/text-field "username")
+			(form/password-field "password")
+			(form/submit-button "Login"))]
+	  [:div
+	   [:h3 "Register"]
+	   (form/form-to [:post "/iasess/mode/adduser"]
+			  (form/text-field "username")
+			  (form/password-field "password")
+			  (form/submit-button "Register"))]]))
+
+
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (edit-links-html (-> (:params request)
-                                                    (assoc :id "guest")
-                                                    (assoc :mode "edit"))))
+  (ANY "/iasess/login" request (login request))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
@@ -572,8 +594,7 @@
           (create-user (params :username) (params :password))
           (workflows/make-auth {:username (params :username)
                                 :password (creds/hash-bcrypt (params :password))
-                                :roles #{"ie.endaten.iasess/iasess"}})
-          nil)))))
+                                :roles #{"ie.endaten.iasess/iasess"}}))))))
 
 (def secured-app
   (handler/site
