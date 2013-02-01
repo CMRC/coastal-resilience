@@ -550,33 +550,31 @@
   (friend/authorize #{"ie.endaten.iasess/iasess"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
 
-(defn login [request]
+(defn login [{:keys [params]}  error]
         (page/html5
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
-	  (if (seq (get-user ((:params request) :username)))
-	    "That username already exists in the system. Please try another, or use Login"
-	    "Please login or register")
-	  [:div
-	   [:h3 "Login"]
+	  [:div {:class "register"}
+	   [:h3 "Registered users please login"]
 	  (form/form-to [:post "/iasess/login"]
 			(form/text-field "username")
 			(form/password-field "password")
 			(form/submit-button "Login"))]
-	  [:div
-	   [:h3 "Register"]
+	  [:div {:class "register"}
+	   [:h3 "New users please register"]
 	   (form/form-to [:post "/iasess/mode/adduser"]
 			  (form/text-field "username")
 			  (form/password-field "password")
-			  (form/submit-button "Register"))]]))
+			  (form/submit-button "Register"))]
+	  [:em error]]))
 
 
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (login (update-in request [:params] dissoc :username)))
+  (ANY "/iasess/login" request (login request ""))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
@@ -591,7 +589,7 @@
     (when (and (= uri "/iasess/mode/adduser")
                (= request-method :post))
       (if (seq (get-user (params :username)))
-        (println "user" (params :username) "exists")
+        (login params "User exists")
         (do
           (create-user (params :username) (params :password))
           (workflows/make-auth {:username (params :username)
