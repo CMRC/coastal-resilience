@@ -550,13 +550,14 @@
   (friend/authorize #{"ie.endaten.iasess/iasess"}
                     (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
 
-(defn login [{:keys [params]}  error]
+(defn login [params  error]
         (page/html5
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
+          [:h2 "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
 	  [:div {:class "register"}
 	   [:h3 "Registered users please login"]
 	  (form/form-to [:post "/iasess/login"]
@@ -574,7 +575,7 @@
 
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (login request ""))
+  (ANY "/iasess/login" request (login (request :params) ""))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
