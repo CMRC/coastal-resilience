@@ -576,7 +576,7 @@
 
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (login request))
+  (ANY "/iasess/login" request (login (update-in request [:params] dissoc :username)))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
