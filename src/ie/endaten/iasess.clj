@@ -557,7 +557,7 @@
           [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
-	  (if (seq (get-user ((:params req) :username)))
+	  (if (seq (get-user ((:params request) :username)))
 	    "That username already exists in the system. Please try another, or use Login"
 	    "Please login or register")
 	  [:div
