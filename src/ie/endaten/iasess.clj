@@ -590,7 +590,9 @@
     (when (and (= uri "/iasess/mode/adduser")
                (= request-method :post))
       (if (seq (get-user (params :username)))
-        (login params "User exists")
+        (do
+	  (login params "User exists")
+	  nil)
         (do
           (create-user (params :username) (params :password))
           (workflows/make-auth {:username (params :username)
