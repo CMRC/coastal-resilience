@@ -531,10 +531,12 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           #_[:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
-                       :marginwidth "0" :src
-                       "http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-12.7473,51.7862,-3.9088,55.1142"}]
-           [:div {:id "mainMap"}]
+           [:div {:class "container_12"}
+            [:div {:id "mapSection" :class "grid_12 rounded"}
+             [:div {:id "mainMap"}
+              [:div {:class "gallery-nav"}
+               [:div {:class "gallery-nav-right" :onclick "getNext()"}]
+               [:div {:class "gallery-nav-left" :onclick "getPrevious()"}]]]]]
            [:div {:id "bar"}
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))
