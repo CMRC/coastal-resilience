@@ -463,7 +463,6 @@
         (page/xhtml
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-          [:script {:src "/iasess/js/script.js"}]
           [:script {:type "text/javascript"}
            "var dojoConfig = { parseOnLoad: true };"]
           [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
@@ -539,7 +538,8 @@
                [:div {:class "gallery-nav-left" :onclick "getPrevious();"}]]]]]]
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-           (edit-links-html (assoc-in params [:mode] "bar"))]])
+           (edit-links-html (assoc-in params [:mode] "bar"))]
+          [:script {:src "/iasess/js/script.js"}]])
         {:status 303
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 
