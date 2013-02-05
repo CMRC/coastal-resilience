@@ -464,6 +464,7 @@
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
+          [:script {:src "/iasess/js/esri.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
           [:ul {:id "nav"}
@@ -525,11 +526,13 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           [:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
+           #_[:iframe {:id "map" :height "100%" :frameborder "0" :scrolling "no" :marginheight "0"
                      :marginwidth "0" :src
                      "http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-12.7473,51.7862,-3.9088,55.1142"}]
+	    [:div {:class "container_12"}
+              [:div {:class "grid_12 rounded" :id "mapSection"}
+                [:div {:id "mainMap"}]]]
            [:div {:id "bar"}
-	   [:iframe {:src "http://www.arcgis.com/sharing/rest/community/users/88rabbit?f=json&token=oFN9PYJjWz4n1wMR4HfRSDxAyJyoXGvrHd85GmwDW6_kelfLvdB5oe9tKlwxU5lAdFAG1IGLv2LO7oqgIIWcjQ.."}]
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))
             (when (= (params :id) "guest")
