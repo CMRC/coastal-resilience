@@ -18,6 +18,7 @@
  .rounded{
    -webkit-border-radius: 2px;
    -moz-border-radius: 2px;
+   border: 0;
  }
  #mainMap{
     height:100%;
