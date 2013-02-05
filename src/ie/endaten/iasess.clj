@@ -458,9 +458,7 @@
             (exportChartAsSVG chart))
           "<h2>Things you can do from here...</h2>
 <h3>Add some nodes..</h3>
-<p>Use the drop down selectors on the second row to select a concept, then Add</p>
-<h4>Add a graph..</h3>
-<p>use the selector next to the Login to ")
+<p>Use the drop down selectors on the second row to select a concept, then Add</p>")
         "edit"
         (page/xhtml
          [:head
