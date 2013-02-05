@@ -535,21 +535,11 @@
             [:div {:id "mapSection" :class "grid_12 rounded"}
              [:div {:id "mainMap"}
               [:div {:class "gallery-nav"}
-               [:div {:class "gallery-nav-right" :onclick "getNext()"}]
-               [:div {:class "gallery-nav-left" :onclick "getPrevious()"}]]]]]
-           [:div {:id "bar"}
-            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-            (edit-links-html (assoc-in params [:mode] "bar"))
-            (when (= (params :id) "guest")
-              [:div {:id "login"}
-               (if (params :login_failed) "Wrong username or password"
-                   "You are accessing iasess as a guest.Your changes can be overwritten by other users.
-               Please login in order to create your own model.")
-               (form/form-to [:post "/iasess/login"]
-                             (form/text-field "username")
-                             (form/password-field "password")
-                             (form/submit-button "Login"))])]]
-           [:script {:src "/iasess/js/script.js"}]])
+               [:div {:class "gallery-nav-right" :onclick "javascript: getNext()"}]
+               [:div {:class "gallery-nav-left" :onclick "javascript: getPrevious()"}]]]]]]
+          [:div {:id "bar"}
+           [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
+           (edit-links-html (assoc-in params [:mode] "bar"))]])
         {:status 303
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 
