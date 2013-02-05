@@ -464,6 +464,9 @@
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:src "/iasess/js/script.js"}]
+          [:script {:type "text/javascript"}
+           "var dojoConfig = { parseOnLoad: true };"]
+          [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
           [:script {:src "/iasess/js/esri.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
