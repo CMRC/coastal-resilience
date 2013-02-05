@@ -529,7 +529,7 @@
                      :marginwidth "0" :src
                      "http://www.arcgis.com/home/webmap/embedViewer.html?webmap=f865f4eeb9fa473485962d5d60613cba&amp;extent=-12.7473,51.7862,-3.9088,55.1142"}]
            [:div {:id "bar"}
-	   [:iframe {:src "oFN9PYJjWz4n1wMR4HfRSDxAyJyoXGvrHd85GmwDW6_kelfLvdB5oe9tKlwxU5lAdFAG1IGLv2LO7oqgIIWcjQ.."}]
+	   [:iframe {:src "http://www.arcgis.com/sharing/rest/community/users/88rabbit?f=json&token=oFN9PYJjWz4n1wMR4HfRSDxAyJyoXGvrHd85GmwDW6_kelfLvdB5oe9tKlwxU5lAdFAG1IGLv2LO7oqgIIWcjQ.."}]
             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
             (edit-links-html (assoc-in params [:mode] "bar"))
             (when (= (params :id) "guest")
