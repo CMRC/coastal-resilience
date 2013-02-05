@@ -32,7 +32,7 @@ function loadPortal() {
 				  //load the first map 
 				  createMap(items[0]);
 				  //create thumbnail gallery 
-				  //createThumbs(items);
+				  createThumbs(items);
 			      } else {
 				  console.log('This group does not contain any public web maps to display.');
 				  esri.hide(dojo.byId('loadingImg'));
