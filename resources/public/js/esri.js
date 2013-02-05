@@ -115,7 +115,7 @@ function showMap() {
 }
 
 function updateDetails(item) {
-    dojo.byId('mapTitle')
+    /*dojo.byId('mapTitle')
 	.innerHTML = item.title;
     dojo.byId('mapOwner')
 	.innerHTML = item.snippet;
@@ -124,16 +124,16 @@ function updateDetails(item) {
             "Map ${page} of  ${total}", {
 		page: (currentMap + 1),
 		total: items.length
-	    });
+	    });*/
 }
 
 function hideMap() {
     //Fade out the previous map 
     var node = dojo.byId(webmaps[currentMap].id);
     esri.hide(node);
-    dojo.byId('mapTitle').innerHTML = '';
+    /*dojo.byId('mapTitle').innerHTML = '';
     dojo.byId('mapOwner').innerHTML = '';
-    dojo.byId('mapCount').innerHTML = '';
+    dojo.byId('mapCount').innerHTML = '';*/
     
     var anim = dojo.fadeOut({
 	node: node
