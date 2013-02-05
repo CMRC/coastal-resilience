@@ -22,11 +22,14 @@ svg {
 #pane {
     clear: both;
     width: 100%;
+    height: 700px;
+}
+#container_12 {
+    width: 50%;
 }
 #graph {
     float: right;
     width: 50%;
-    height: 700px;
 }
 #bar {
     width: 100%;
@@ -62,35 +65,6 @@ svg {
 .register {
     text-align: center;
 }
-/*------------------------------------*\
-	RESET
-\*------------------------------------*/
-body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,p,blockquote,th,td{
-	margin:0;
-	padding:0;
-}
-table{
-	border-collapse:collapse;
-	border-spacing:0;
-}
-fieldset,img{
-	border:0;
-}
-address,caption,cite,code,dfn,th,var{
-	font-style:normal;
-	font-weight:normal;
-}
-caption,th{
-	text-align:left;
-}
-q:before,q:after{
-	content:'';
-}
-abbr,acronym{
-	border:0;
-}
-
-
 
 /*------------------------------------*\
 	NAV
