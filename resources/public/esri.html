@@ -181,38 +181,38 @@
 
 <body>
 <div class='container_12'>
-<div  id='mapSection' class='grid_12 rounded'>
-  <div id='mainMap' >
- <div id='thumbnailContainer' class='gallery-thumbs-container' style='display:none;'>
-<div id='thumbnailList' class='container_12 gallery-thumbs-list'></div>
- </div>
-     <img id="loadingImg" alt="" src="images/loading.gif" style="position:absolute; right:50%; top:50%; z-index:100;display:none;"/>                            
-    <div class="gallery-nav">
+  <div  id='mapSection' class='grid_12 rounded'>
+    <div id='mainMap' >
+      <div id='thumbnailContainer' class='gallery-thumbs-container' style='display:none;'>
+	<div id='thumbnailList' class='container_12 gallery-thumbs-list'></div>
+      </div>
+      <img id="loadingImg" alt="" src="images/loading.gif" style="position:absolute; right:50%; top:50%; z-index:100;display:none;"/>                            
+      <div class="gallery-nav">
         <div class="gallery-nav-right" onclick='getNext();'></div>
         <div class="gallery-nav-left" onclick='getPrevious();'></div>
+      </div>
     </div>
-  </div>
   </div>
   
   <div class='clear' ></div>   
   <div id='detailsSection' class='grid_12 rounded'>
-  <div class='grid_9 alpha'>
-    <div class='pod' style='padding-left:10px;'>
-      <div id='mapTitle' class='title' ></div>
+    <div class='grid_9 alpha'>
+      <div class='pod' style='padding-left:10px;'>
+	<div id='mapTitle' class='title' ></div>
       <div class='subtitle' id='mapOwner'></div>
+      </div>
     </div>
-  </div>
-
+    
   <div class='grid_3 omega'>
     <div class='pod'>
       <div id='mapCount' class='subtitle'></div>
     </div>
   </div>
       <div>
-         <div id='thumbs' class='gallery-thumb' onclick='toggleGallery();'></div>
+        <div id='thumbs' class='gallery-thumb' onclick='toggleGallery();'></div>
   </div> 
   </div>
-
+  
 </div>
 </body>
 </html>
