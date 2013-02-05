@@ -16,7 +16,12 @@ body {
     border-style: inset;
     background-color: #DCD8C2;
 }
+svg {
+    width: 100%;
+}
 #pane {
+    clear: both;
+    width: 100%;
 }
 #graph {
     float: right;
