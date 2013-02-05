@@ -17,8 +17,6 @@ body {
     background-color: #DCD8C2;
 }
 #pane {
-    clear: both;
-    width: 100%;
 }
 #graph {
     float: right;
