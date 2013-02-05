@@ -23,6 +23,10 @@ svg {
     clear: both;
     width: 100%;
 }
+#mainMap {
+    width: 50%;
+    height: 700px;
+}
 #graph {
     float: right;
     width: 50%;
