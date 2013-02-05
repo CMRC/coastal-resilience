@@ -535,8 +535,8 @@
             [:div {:id "mapSection" :class "grid_12 rounded"}
              [:div {:id "mainMap"}
               [:div {:class "gallery-nav"}
-               [:div {:class "gallery-nav-right" :onclick "javascript: getNext()"}]
-               [:div {:class "gallery-nav-left" :onclick "javascript: getPrevious()"}]]]]]]
+               [:div {:class "gallery-nav-right" :onclick "getNext();"}]
+               [:div {:class "gallery-nav-left" :onclick "getPrevious();"}]]]]]]
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]])
