@@ -12,10 +12,10 @@ function init() {
     dojo.connect(portal, 'onLoad', loadPortal);
 }
 
-function loadPortal(group) {
+function loadPortal() {
     //query the group and retrieve the Web Maps.
       var params = {
-          q: 'title:' + group
+          q: 'title:' + mapgrp
       };
       portal.queryGroups(params)
       .then(function (response) {

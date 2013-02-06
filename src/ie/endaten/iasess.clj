@@ -466,8 +466,8 @@
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:type "text/javascript"}
            (str "var dojoConfig = { parseOnLoad: true };"
-		"var group = '"
-		(if-let [c( doc :context)] c "Iasess Dingle") 
+		"var mapgrp = '"
+		(if-let [c (doc :context)] c "Iasess Dingle") 
 		"';")]
           [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
           [:script {:src "/iasess/js/esri.js"}]
