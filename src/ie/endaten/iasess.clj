@@ -164,11 +164,12 @@
     (println "users: " (clutch/get-view "users" :by-user {:key email}))
     (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
-(defn create-user [email password]
+(defn create-user [email password context]
   (clutch/with-db db
     (clutch/put-document {:user email :username email
                           :password (creds/hash-bcrypt password)
-                          :roles #{::iasess} :nodes {} :links {}})))
+                          :roles #{::iasess} :nodes {} :links {}
+			  :context context})))
 
 
 (defn edit-links [params nodes links concepts]
@@ -464,7 +465,10 @@
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:script {:type "text/javascript"}
-           "var dojoConfig = { parseOnLoad: true };"]
+           (str "var dojoConfig = { parseOnLoad: true };"
+		"var mapgrp = '"
+		(if-let [c (doc :context)] c "Iasess Dingle") 
+		"';")]
           [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
           [:script {:src "/iasess/js/esri.js"}]
           [:style {:type "text/css"} "@import \"http://serverapi.arcgisonline.com/jsapi/arcgis/3.3/js/esri/css/esri.css\";"]
@@ -566,6 +570,8 @@
 	   (form/form-to [:post "/iasess/mode/adduser"]
 			  (form/text-field "username")
 			  (form/password-field "password")
+			  "Map Context"
+			  (form/text-field "context")
 			  (form/submit-button "Register"))]
 	  [:em error]]))
 
@@ -589,7 +595,7 @@
       (if (seq (get-user (params :username)))
 	{:status 200 :headers {} :body (login params "User exists")}
         (do
-          (create-user (params :username) (params :password))
+          (create-user (params :username) (params :password) (params :context))
           (workflows/make-auth {:username (params :username)
                                 :password (creds/hash-bcrypt (params :password))
                                 :roles #{"ie.endaten.iasess/iasess"}}))))))

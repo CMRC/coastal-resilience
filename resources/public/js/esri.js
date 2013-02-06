@@ -15,7 +15,7 @@ function init() {
 function loadPortal() {
     //query the group and retrieve the Web Maps.
       var params = {
-          q: 'title:Iasess Dingle'
+          q: 'title:' + mapgrp
       };
       portal.queryGroups(params)
       .then(function (response) {
