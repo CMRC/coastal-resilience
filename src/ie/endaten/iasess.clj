@@ -169,7 +169,7 @@
     (clutch/put-document {:user email :username email
                           :password (creds/hash-bcrypt password)
                           :roles #{::iasess} :nodes {} :links {}
-			  :context context})))
+			  :context "Iasess Dingle"})))
 
 
 (defn edit-links [params nodes links concepts]
@@ -342,7 +342,7 @@
 	    "setcontext" (do
 			   (clutch/update-document
 			    (merge doc
-				   {:context (params :context)})))
+				   {:context (params :context)}))
 			   {:status 303
 			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "add"        (do
@@ -550,7 +550,7 @@
 	       (edit-links-html (assoc-in params [:mode] "bar"))]
 	      [:script {:src "/iasess/js/script.js"}]])
 	    {:status 303
-	     :headers {"Location" (str (base-path params) "/mode/edit")}})))
+	     :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 
 (defn auth-edit-links-html [req]
   (friend/authorize #{"ie.endaten.iasess/iasess"}
