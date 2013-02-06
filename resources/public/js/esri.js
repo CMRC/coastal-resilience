@@ -12,10 +12,10 @@ function init() {
     dojo.connect(portal, 'onLoad', loadPortal);
 }
 
-function loadPortal() {
+function loadPortal(group) {
     //query the group and retrieve the Web Maps.
       var params = {
-          q: 'title:Iasess Dingle'
+          q: 'title:' + group
       };
       portal.queryGroups(params)
       .then(function (response) {
