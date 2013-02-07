@@ -134,10 +134,10 @@ svg {
 #nav ul a{
 	white-space:nowrap; /* Stop text wrapping and creating multi-line dropdown items */
 }
-#nav li:active ul{ /* Display the dropdown on hover */
+#nav li:focus ul{ /* Display the dropdown on hover */
 	left:0; /* Bring back on-screen when needed */
 }
-#nav li:active a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
+#nav li:focus a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
 	width: 20em;
 	background:lightblue;
 }
@@ -145,22 +145,22 @@ svg {
 	display: none;
 	width: 100%;
 }
-#nav li:active li:active a {
+#nav li:focus li:focus a {
     float: left;
 }
-#nav li ul li:active a:active{
+#nav li ul li:focus a:focus{
     background:beige;
 }
-#nav li:active li:active .add-text {
+#nav li:focus li:focus .add-text {
     display: block;
 }
-#nav li:active li:active a input {
+#nav li:focus li:focus a input {
     width: 100%;
 }
-#nav li:active ul a{ /* The persistent hover state does however create a global style for links even before they're hovered. Here we undo these effects. */
+#nav li:focus ul a{ /* The persistent hover state does however create a global style for links even before they're hovered. Here we undo these effects. */
 	text-decoration:none;
 }
-#nav li:active ul li a:active{ /* Here we define the most explicit hover states--what happens when you hover each individual link. */
+#nav li:focus ul li a:focus{ /* Here we define the most explicit hover states--what happens when you hover each individual link. */
 	background:#lightblue;
 }
 
