@@ -569,7 +569,7 @@
     (println params)
     (when (= uri "/iasess/login")
       {:status 200 :headers {} :body session})
-    (when (and (= uri "/iasess/mode/adduser")
+    #_(when (and (= uri "/iasess/mode/adduser")
                (= request-method :post))
       (if (seq (get-user (params :username)))
 	{:status 200 :headers {} :body (login params "User exists")}
