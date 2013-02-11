@@ -470,7 +470,7 @@
           [:style {:type "text/css"} "@import \"http://serverapi.arcgisonline.com/jsapi/arcgis/3.3/js/esri/css/esri.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
-         [:body
+         [:body {:ontouchstart ""}
           [:ul {:id "nav"}
            [:li [:a "File"]
             [:ul
