@@ -591,4 +591,4 @@
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params secured-app) {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
+  (run-jetty secured-app {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
