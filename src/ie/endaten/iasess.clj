@@ -580,7 +580,7 @@
                                 :roles #{"ie.endaten.iasess/iasess"}}))))))
 
 (def secured-app
-  (wrap-session
+  (handler/site
    (friend/authenticate
     webservice
     {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
