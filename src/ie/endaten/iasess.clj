@@ -580,14 +580,15 @@
                                 :roles #{"ie.endaten.iasess/iasess"}}))))))
 
 (def secured-app
-  (handler/site {:session {:store (cookie-store)}}
+  (handler/site
    (friend/authenticate
     webservice
     {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
      :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
-     :default-landing-uri "/iasess/mode/edit"})))
+     :default-landing-uri "/iasess/mode/edit"})
+   {:session {:store (cookie-store)}}))
 
 (defn -main
   "Run the jetty server."
