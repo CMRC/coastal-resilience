@@ -478,32 +478,24 @@
           [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body {:ontouchstart ""}
-          [:ul {:id "nav"}
-           [:li [:a "File"]
-            [:ul
-             (when-not (= (params :id) "guest")
-                 [:div [:li [:a {:href "/iasess/logout"} "Logout"]]
-                  [:li [:a "Add User"]
-                   (form/form-to {:id "adduser" :class "add-text"}
-                                 [:post "/iasess/mode/adduser"]
-                                 [:a {:href (str "javascript: submitform(\""
-                                                 "\")")}
-                                  (form/text-field "username")
-                                  (form/hidden-field "password" "friend")])]])
-             [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
+          [:div {:class "concepts"}
+           (form/form-to {:id "file"}
+                         [:get "/iasess/mode/file"]
+                         (form/drop-down
+                          {:onchange "submitform('file')"}
+                          "element" ["File" "Logout" "Download"]))
            (map (fn [[level menustr]]
-                  [:div {:class "concepts"}
                    (form/form-to {:id level}
                                  [:post "/iasess/mode/add"]
                                  (form/drop-down
                                   {:onchange (str "submitform('" level "')")}
-                                  "element" (cons menustr drivers)))])
+                                  "element" (cons menustr drivers))))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
                  impacts "Welfares"
                  responses "Responses"})
-           [:li [:a [:span {:id "user"} "Welcome: " (params :id)] [:span [:b "i"] "asess:coast"]]]]
+           [:a [:span {:id "user"} "Welcome: " (params :id)] [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
@@ -517,7 +509,7 @@
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]
           [:script {:src "/iasess/js/script.js"}]])
-        {:status 303
+          {:status 303
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 
 (defn auth-edit-links-html [req]
