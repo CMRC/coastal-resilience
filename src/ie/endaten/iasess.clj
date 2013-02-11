@@ -492,42 +492,12 @@
                                   (form/hidden-field "password" "friend")])]])
              [:li [:a {:href "/iasess/mode/download"} "Download"]]]]
            (map (fn [[level menustr]]
-                  (vector :li [:a {:href "#":onmouseover
-                                   (str "infotext(\"Information Panel: Add "
-                                        menustr "\")")} menustr]
-                          [:ul
-                           (map (fn [concept]
-                                  (vector :li
-                                          (form/form-to {:id (encode-nodename concept)
-                                                         :class "concept"}
-                                                        [:post (str (base-path params) "/mode/add")]
-                                                        (form/hidden-field "element" concept)
-                                                        [:a {:href (str "javascript: submitform(\""
-                                                                        (encode-nodename concept)
-                                                                        "\")")
-                                                             :onmouseover
-                                                             (str "infotext(\"Information Panel: Add "
-                                                                  menustr " concept " concept "\")")} concept])
-                                          (form/form-to {:class "add-text"}
-                                                        [:get (str (base-path params) "/mode/more")]
-                                                        (form/hidden-field "element" concept)
-                                                        [:a
-                                                         {:onmouseover
-                                                          "infotext(\"Information Panel: Add your own text\")"}
-                                                         (form/text-field "more"
-                                                                          (if-let [more ((keyword concept) (:notes doc))]
-                                                                            more
-                                                                            "Additional text..."))])))
-                                level)
-                           [:li [:a {:href "#"
-                                     :onmouseover
-                                     (str "infotext(\"Information Panel: Add your own "
-                                          menustr " concept\")")} "Custom"]
-                            (form/form-to {:class "add-text" :id level :autocomplete "off"}
-                                     [:post (str (base-path params) "/mode/addnew")]
-                                      (form/hidden-field "level" menustr)
-                                      [:a {:onmouseover
-                                           "infotext(\"Information Panel: Concept name (Enter)\")"}(form/text-field "element" "")])]]))
+                  [:div {:class "concepts"}
+                   (form/form-to {:id level}
+                                 [:post "/iasess/mode/add"]
+                                 (form/drop-down
+                                  {:onchange (str "submitform('" level "')")}
+                                  menustr (cons menustr drivers)))])
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
@@ -585,7 +555,19 @@
   (GET "/iasess" request (ring.util.response/redirect "/iasess/mode/edit"))
   (friend/logout (ANY "/iasess/logout" request (ring.util.response/redirect "/iasess/login")))
   
-  (resources "/iasess"))
+  (resources "/iasess")
+  (GET "/iasess/test" request
+       (page/xhtml [:head
+                    [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
+                    [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
+                   [:body
+                    [:div {:class "concepts"}
+                     (form/form-to {:id "drivers"}
+                                    [:post "/iasess/mode/add"]
+                                    (form/drop-down
+                                     {:onchange "submitform('drivers')"}
+                                     "Drivers" (cons "Drivers" drivers)))]
+                    [:script {:src "/iasess/js/script.js"}]])))
 
 (defn my-workflow [{:keys [uri request-method params]}]
   (do
