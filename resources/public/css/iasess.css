@@ -68,32 +68,6 @@ svg {
     text-align: center;
 }
 
-/*------------------------------------*\
-	NAV
-\*------------------------------------*/
-#nav{
-	list-style:none;
-	margin-bottom:10px;
-	/* Clear floats */
-	float:left;
-	width:100%;
-	/* Bring the nav above everything else--uncomment if needed.
-	position:relative;
-	z-index:5;
-	*/
-}
-#nav li{
-	float:left;
-	margin-right:10px;
-	position:relative;
-	width: 13%;
-	z-index: 100;
-}
-#nav > li:last-child {
-    width: 18%;
-    background: lightblue;	
-    text-align: right;
-}
 .concepts a {
     background: lightblue;
     color: steelblue;		
@@ -176,11 +150,9 @@ h1{
 	width:520px;
 }
 
-.concepts select, .concepts a {
+.concepts select {
     background: steelblue;
     padding: 5px;
-    font-size: 16px;
-    line-height: 1;
     border: 0;
     border-radius: 0;
     -webkit-appearance: none;
