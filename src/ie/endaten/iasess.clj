@@ -569,15 +569,15 @@
     (case uri
       "/iasess/login"
       (workflows/make-auth {:username (session :username)})
-      "/iasess/mode/adduser")
-    (if (= request-method :post)
-      (if (seq (get-user (params :username)))
-	{:status 200 :headers {} :body (login params "User exists")}
-        (do
-          (create-user (params :username) (params :password) (params :context))
-          (workflows/make-auth {:username (params :username)
-                                :password (creds/hash-bcrypt (params :password))
-                                :roles #{"ie.endaten.iasess/iasess"}}))))))
+      "/iasess/mode/adduser"
+      (if (= request-method :post)
+        (if (seq (get-user (params :username)))
+          {:status 200 :headers {} :body (login params "User exists")}
+          (do
+            (create-user (params :username) (params :password) (params :context))
+            (workflows/make-auth {:username (params :username)
+                                  :password (creds/hash-bcrypt (params :password))
+                                  :roles #{"ie.endaten.iasess/iasess"}})))))))
 
 (def secured-app
   (handler/site
