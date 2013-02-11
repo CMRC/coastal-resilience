@@ -348,13 +348,11 @@
                                    {:context (params :context)}))
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "add"        (if (= "Custom..." (params "element"))
-                           (println "here")
-                           (do
-                            (clutch/update-document
-                             (merge doc
-                                    {:nodes (merge nodes
-                                                   {(encode-nodename (params :element)) (params :element)})}))
+            "add"        (do
+                           (clutch/update-document
+                            (merge doc
+                                   {:nodes (merge nodes
+                                                  {(encode-nodename (params :element)) (params :element)})})
                             {:status 303
                              :headers {"Location" (str (base-path params) "/mode/edit")}}))
 	    "addnew"    (do
