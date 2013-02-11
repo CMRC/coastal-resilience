@@ -1,3 +1,63 @@
+(ns ie.endaten.iasess
+  (:gen-class)
+  (:require [clojure.data.json :as json]
+            [compojure.route :as route]
+            [compojure.core :as compojure]
+            [cemerick.friend :as friend]
+            (cemerick.friend [workflows :as workflows]
+                             [credentials :as creds])
+            [compojure.handler :as handler]
+            [clojure.xml :as xml] 
+            [clojure.math.numeric-tower :as math]
+            [com.ashafa.clutch :as clutch]
+            [com.ashafa.clutch.view-server :as view]
+            [incanter.core :as incanter]
+            [incanter.charts :as chart]
+            [hiccup.form :as form]
+            [hiccup.page :as page])
+  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
+        dorothy.core)
+  (:import (java.io ByteArrayOutputStream
+                    ByteArrayInputStream
+                    OutputStreamWriter)
+           (java.net URLEncoder
+                     URLDecoder
+                     URL)
+           (java.awt.geom Rectangle2D$Double)
+           (org.jfree.chart StandardChartTheme)
+           (org.jfree.chart.axis CategoryLabelPositions)
+           (org.apache.batik.transcoder TranscoderInput
+                                        TranscoderOutput)
+           (org.apache.batik.dom GenericDOMImplementation)
+           (org.apache.batik.svggen SVGGraphics2D)))
+
+#_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
+
+(def db "resilience")
+(def lowlight "grey")
+(def highlight "cornflowerblue")
+(def positive "red")
+(def negative "cornflowerblue")
+(def default-data-file "Mike%20-%20FCM%20Cork%20Harbour.csv")
+(def default-format "matrix")
+(def strengths {:H+ 0.75 :M+ 0.5 :L+ 0.25 :H- -0.75 :M- -0.5 :L- -0.25})
+
+(defn get-users []
+  (try
+    (clutch/with-db db
+      (reduce #(assoc %1 (:key %2) (:value %2)) {} (clutch/get-view "all-users" :users)))))
+
+(defn exportChartAsSVG
+  [chart]
+  ;;Get a DOMImplementation and create an XML document
+  (let [domImpl (GenericDOMImplementation/getDOMImplementation)
+        document (.createDocument domImpl nil "svg" nil)
+        ;; Create an instance of the SVG Generator
+        svgGenerator (SVGGraphics2D. document)
+        rect (Rectangle2D$Double. 0 0 600 300)
+        draw (.draw chart svgGenerator rect)
+        ;; Write svg file
+        outputStream (ByteArrayOutputStream.)
         out (OutputStreamWriter. outputStream "UTF-8")
         gen (.stream svgGenerator out true)]
     (.flush outputStream)
@@ -289,12 +349,12 @@
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
             "add"        (do
-                           (clutch/update-document
-                            (merge doc
-                                   {:nodes (merge nodes
-                                                  {(encode-nodename (params :element)) (params :element)})})
-                            {:status 303
-                             :headers {"Location" (str (base-path params) "/mode/edit")}}))
+                                                  (clutch/update-document
+			    (merge doc
+				   {:nodes (merge nodes
+						  {(encode-nodename (params :element)) (params :element)})}))
+			   {:status 303
+			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addnew"    (do
 			  (new-concept (params :id) (params :element) (params :level) doc)
 			  {:status 303
@@ -432,7 +492,7 @@
                                  [:post "/iasess/mode/add"]
                                  (form/drop-down
                                   {:onchange (str "submitform('" level "')")}
-                                  "element" (cons menustr drivers "Custom..."))))
+                                  "element" (cons menustr drivers))))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
@@ -530,5 +590,4 @@
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params secured-app)
-             {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
+  (run-jetty (wrap-params secured-app) {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
