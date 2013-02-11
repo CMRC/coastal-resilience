@@ -94,11 +94,11 @@ svg {
     background: lightblue;	
     text-align: right;
 }
-#nav > li:last-child a {
+.concepts a {
     background: lightblue;
     color: steelblue;		
 }
-#nav > li:last-child a b{
+.concepts a b{
     color: beige;	
 }
 #user {
@@ -176,7 +176,7 @@ h1{
 	width:520px;
 }
 
-.concepts select {
+.concepts select, .concepts a {
     background: steelblue;
     padding: 5px;
     font-size: 16px;
@@ -184,5 +184,5 @@ h1{
     border: 0;
     border-radius: 0;
     -webkit-appearance: none;
-    float: right;
+    float: left;
 }

@@ -338,15 +338,18 @@
           losers (map #(:user (:value %)) (clutch/get-view "users" :by-user))
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
-      (case (params :mode)
-	    "setcontext" (do
-			   (clutch/update-document
-			    (merge doc
-				   {:context (params :context)}))
-			   {:status 303
-			    :headers {"Location" (str (base-path params) "/mode/edit")}})
-	    "add"        (do
-			   (clutch/update-document
+          (case (params :mode)
+            "file" (case (params :element)
+                     "Logout" (ring.util.response/redirect "/iasess/logout")
+                     "Download" (ring.util.response/redirect "/iasess/mode/download"))
+            "setcontext" (do
+                           (clutch/update-document
+                            (merge doc
+                                   {:context (params :context)}))
+                                   {:status 303
+                                    :headers {"Location" (str (base-path params) "/mode/edit")}})
+            "add"        (do
+                                                  (clutch/update-document
 			    (merge doc
 				   {:nodes (merge nodes
 						  {(encode-nodename (params :element)) (params :element)})}))
