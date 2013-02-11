@@ -16,7 +16,7 @@
             [hiccup.form :as form]
             [hiccup.page :as page])
   (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
-        dorothy.core)
+        ring.middleware.session.cookie, dorothy.core)
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream
                     OutputStreamWriter)
@@ -585,7 +585,8 @@
      :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
-     :default-landing-uri "/iasess/mode/edit"})))
+     :default-landing-uri "/iasess/mode/edit"})
+   {:session {:store (cookie-store)}}))
 
 (defn -main
   "Run the jetty server."
