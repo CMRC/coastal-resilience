@@ -566,11 +566,11 @@
 
 (defn my-workflow [{:keys [uri request-method params session]}]
   (do
-    (println params)
-    (when (= uri "/iasess/login")
-      {:status 200 :headers {} :body params})
-    #_(when (and (= uri "/iasess/mode/adduser")
-               (= request-method :post))
+    (case uri
+      "/iasess/login"
+      (workflows/make-auth {:username (session :username)})
+      "/iasess/mode/adduser")
+    (if (= request-method :post)
       (if (seq (get-user (params :username)))
 	{:status 200 :headers {} :body (login params "User exists")}
         (do
