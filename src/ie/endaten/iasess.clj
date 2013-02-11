@@ -497,7 +497,7 @@
                                  [:post "/iasess/mode/add"]
                                  (form/drop-down
                                   {:onchange (str "submitform('" level "')")}
-                                  menustr (cons menustr drivers)))])
+                                  "element" (cons menustr drivers)))])
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
