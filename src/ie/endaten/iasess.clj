@@ -348,11 +348,13 @@
                                    {:context (params :context)}))
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "add"                                  (do
+            "add"        (if (= "Custom..." (params "element"))
+                           (println "here")
+                           (do
                             (clutch/update-document
                              (merge doc
                                     {:nodes (merge nodes
-                                                   {(encode-nodename (params :element)) (params :element)})})
+                                                   {(encode-nodename (params :element)) (params :element)})}))
                             {:status 303
                              :headers {"Location" (str (base-path params) "/mode/edit")}}))
 	    "addnew"    (do
@@ -585,12 +587,10 @@
      :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
-     :default-landing-uri "/iasess/mode/edit"})
-   {:session {:store (cookie-store)}}))
+     :default-landing-uri "/iasess/mode/edit"})))
 
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params secured-app)
+  (run-jetty (wrap-params (wrap-session secured-app {:store (cookie-store)}))
              {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
-
