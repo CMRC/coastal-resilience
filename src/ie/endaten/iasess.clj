@@ -588,7 +588,7 @@
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})
-   {:store (cookie-store)}))
+   {:session {:store (cookie-store)}}))
 
 (defn -main
   "Run the jetty server."
