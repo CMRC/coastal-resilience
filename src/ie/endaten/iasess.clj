@@ -564,9 +564,11 @@
                                      "Drivers" (cons "Drivers" drivers)))]
                     [:script {:src "/iasess/js/script.js"}]])))
 
-(defn my-workflow [{:keys [uri request-method params]}]
+(defn my-workflow [{:keys [uri request-method params session]}]
   (do
     (println params)
+    (when (= uri "/iasess/login")
+      {:status 200 :headers {} :body session})
     (when (and (= uri "/iasess/mode/adduser")
                (= request-method :post))
       (if (seq (get-user (params :username)))
