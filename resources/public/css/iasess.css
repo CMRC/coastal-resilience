@@ -70,7 +70,10 @@ svg {
 
 .concepts a {
     background: lightblue;
-    color: steelblue;		
+    color: steelblue;	
+    display:block;
+    padding:5px;
+    text-align: right;
 }
 .concepts a b{
     color: beige;	
@@ -157,8 +160,4 @@ h1{
     border-radius: 0;
     -webkit-appearance: none;
     float: left;
-}
-
-.concepts {
-    background-image: url(/iasess/images/bg.png") no-repeat right;
 }

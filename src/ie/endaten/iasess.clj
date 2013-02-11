@@ -486,7 +486,7 @@
                          [:get "/iasess/mode/file"]
                          (form/drop-down
                           {:onchange "submitform('file')"}
-                          "element" ["File" "Logout" "Download"]))
+                          "element" [(str "Welcome: " (params :id)) "Logout" "Download"]))
            (map (fn [[level menustr]]
                    (form/form-to {:id level}
                                  [:post "/iasess/mode/add"]
@@ -498,7 +498,7 @@
                  state-changes "State Changes"
                  impacts "Welfares"
                  responses "Responses"})
-           [:a [:span {:id "user"} "Welcome: " (params :id)] [:span [:b "i"] "asess:coast"]]]
+           [:a [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
