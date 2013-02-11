@@ -587,8 +587,7 @@
      :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
-     :default-landing-uri "/iasess/mode/edit"})
-   {:session {:store (cookie-store)}}))
+     :default-landing-uri "/iasess/mode/edit"})))
 
 (defn -main
   "Run the jetty server."
