@@ -71,12 +71,16 @@ svg {
 
 .concepts a {
     background: lightblue;
+<<<<<<< HEAD
     color: steelblue;	
     display:block;
     padding:6px;
     text-align: center;
     width: 6em;
     float: left;
+=======
+    color: steelblue;		
+>>>>>>> parent of 3f18ec5... tweaking styles
 }
 .concepts a b{
     color: beige;	
@@ -165,4 +169,8 @@ h1{
     border-radius: 0;
     -webkit-appearance: none;
     float: left;
+}
+
+.concepts {
+    background-image: url(/iasess/images/bg.png") no-repeat right;
 }
