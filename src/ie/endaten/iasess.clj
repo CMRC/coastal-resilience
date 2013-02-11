@@ -349,7 +349,7 @@
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
             "add"        (if (= "Custom..." (params "element"))
-                           nil
+                           (println "here")
                            (do
                             (clutch/update-document
                              (merge doc
@@ -580,7 +580,7 @@
                                 :roles #{"ie.endaten.iasess/iasess"}}))))))
 
 (def secured-app
-  (handler/site
+  (handler/site {:session {:store (cookie-store)}}
    (friend/authenticate
     webservice
     {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
@@ -592,8 +592,6 @@
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-session
-              (wrap-params secured-app)
-              {:cookie-name "climateireland.ie"
-               :store (cookie-store)}) {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
+  (run-jetty (wrap-params secured-app)
+             {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
 
