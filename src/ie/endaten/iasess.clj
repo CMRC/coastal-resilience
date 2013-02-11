@@ -567,8 +567,8 @@
 (defn my-workflow [{:keys [uri request-method params session]}]
   (do
     (case uri
-      "/iasess/login"
-      (workflows/make-auth {:username (session :username)})
+      #_"/iasess/login"
+      #_(workflows/make-auth {:username (session :username)})
       "/iasess/mode/adduser"
       (if (= request-method :post)
         (if (seq (get-user (params :username)))
