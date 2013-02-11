@@ -568,7 +568,7 @@
   (do
     (println params)
     (when (= uri "/iasess/login")
-      {:status 200 :headers {} :body session})
+      {:status 200 :headers {} :body params})
     #_(when (and (= uri "/iasess/mode/adduser")
                (= request-method :post))
       (if (seq (get-user (params :username)))
