@@ -73,10 +73,10 @@ svg {
     background: lightblue;
     color: steelblue;	
     display:block;
-    padding:5px;
+    padding:6px;
     text-align: center;
-    margin: 1px;
-    width: 5em;
+    width: 6em;
+    float: left;
 }
 .concepts a b{
     color: beige;	
