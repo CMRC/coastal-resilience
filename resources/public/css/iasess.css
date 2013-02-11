@@ -85,6 +85,7 @@ svg {
 	margin-right:10px;
 	position:relative;
 	width: 13%;
+	z-index: 100;
 }
 #nav > li:last-child {
     width: 18%;

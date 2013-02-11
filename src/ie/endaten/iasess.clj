@@ -164,11 +164,12 @@
     (println "users: " (clutch/get-view "users" :by-user {:key email}))
     (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
-(defn create-user [email password]
+(defn create-user [email password context]
   (clutch/with-db db
     (clutch/put-document {:user email :username email
                           :password (creds/hash-bcrypt password)
-                          :roles #{::iasess} :nodes {} :links {}})))
+                          :roles #{::iasess} :nodes {} :links {}
+			  :context "Iasess Dingle"})))
 
 
 (defn edit-links [params nodes links concepts]
@@ -338,125 +339,131 @@
           users (remove #(or (nil? %) (= % "") (= % (:user doc))) losers)
           adduser (clutch/get-view "users" :by-user {:key (params "model")})]
       (case (params :mode)
-        "add"      (do
-                     (clutch/update-document
-                      (merge doc
-                             {:nodes (merge nodes
-                                            {(encode-nodename (params :element)) (params :element)})}))
-                     {:status 303
-                      :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "addnew"   (do
-                     (new-concept (params :id) (params :element) (params :level) doc)
-                     {:status 303
-                      :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "addmodel" (let
-                       [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
-                     (clutch/update-document
-                      (merge doc
-                             {:models (merge models
-                                             {(:id (first adduser)) (params "model")})}))
-                     {:status 303
-                      :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "more" (let
-                   [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
-                 (clutch/update-document
-                  (merge doc
-                         {:notes (merge (:notes doc)
-                                        {(encode-nodename (params :element)) (params "more")})}))
-                 {:status 303
-                  :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "delete"   (do
-                     (clutch/update-document
-                      (merge doc
-                             {:nodes (dissoc nodes (keyword (str (params :node))))}))
-                     {:status 303
-                      :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "save"     (do (if (= (params :weight) "3") ;;maps to zero
-                         (clutch/put-document
-                          (merge doc
-                                 {:links (dissoc (:links doc)
-                                                 (keyword (str (params :node)
-                                                               (params :tail))))}))
-                         (clutch/put-document
-                          (merge doc
-                                 {:links
-                                  (merge (:links doc)
-                                         {(keyword (str (params :node)
-                                                        (params :tail)))
-                                          {:head (params :node)
-                                           :tail (params :tail)
-                                           :weight (params :weight)}})})))
-                       {:status 303
-                        :headers {"Location" (str (base-path params) "/mode/edit")}})
-        "download" 
-        {:status 200
-         :headers {"Content-Type" "text/tab-separated-values"
-                   "Content-Disposition" "attachment;filename=matrix.tsv"}
-         :body (str "\t" (apply str (map #(str (second %) "\t") nodes)) "\n"     ;;header row
-                    (apply str                                               
-                           (map                                               ;;value rows
-                            (fn [tail]                                        ;;each elem as a potential tail
-                              (str (second tail) "\t"                           ;;elem name at start of row
-                                   (apply str
-                                          (map                                ;;each elem as a potential head
-                                           (fn [head]
-                                             (str (if                         ;;loop through links, finding matches
-                                                      (= (name (first tail))  ;; value of key,value
-                                                         (:tail (get links    ;; tail matches tail, get weight
-                                                                     (keyword 
-                                                                      (str (name (first head))
-                                                                           (name (first tail)))))))
-                                                    (display-weight           ;;cell value
-                                                     (:weight (get links (keyword
-                                                                          (str (name (first head))
-                                                                               (name (first tail)))))))
-                                                    "0.0") "\t"))               ;;no link, =zero
-                                           nodes))
-                                   "\n"))
-                            nodes)))}
-        "bar"
-        (if (seq nodes)
-          (let [causes
-                (incanter/trans
-                 (apply vector                                               
-                        (map                                               ;;value rows
-                         (fn [head]                                        ;;each elem as a potential head
-                           (apply vector
-                                  (map                                ;;each elem as a potential tail
-                                   (fn [tail]
-                                     (if                         ;;loop through links, finding matches
-                                         (= (name (first head))  ;; value of key,value
-                                            (:tail (get links    ;; tail matches tail, get weight
-                                                        (keyword 
-                                                         (str (name (first tail))
-                                                              (name (first head)))))))
-                                       (let [w (:weight (get links (keyword
-                                                                       (str (name (first tail))
-                                                                            (name (first head))))))]
-                                         (num-weight w))
-                                       0.0))               ;;no link, =zero
-                                   nodes)))
-                         nodes)))
-                states (incanter/matrix 1 (count nodes) 1)
-                squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
-                out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
-                minusahalf (map #(- % 0.5) out)
-                chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
-                                             :y-label "")
-                        (chart/set-theme (StandardChartTheme. "theme"))
-                        (.setBackgroundPaint java.awt.Color/lightGray)
-                        (->
-                         .getPlot
-                         .getDomainAxis
-                         (.setCategoryLabelPositions
-                          (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
-                out-stream (ByteArrayOutputStream.)
-                in-stream (do
-                            (incanter/save chart out-stream :width 600 :height 150)
-                            (ByteArrayInputStream. 
-                             (.toByteArray out-stream)))]
-            (exportChartAsSVG chart))
-          "<h2>Things you can do from here...</h2>
+	    "setcontext" (do
+			   (clutch/update-document
+			    (merge doc
+				   {:context (params :context)}))
+			   {:status 303
+			    :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "add"        (do
+			   (clutch/update-document
+			    (merge doc
+				   {:nodes (merge nodes
+						  {(encode-nodename (params :element)) (params :element)})}))
+			   {:status 303
+			    :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "addnew"    (do
+			  (new-concept (params :id) (params :element) (params :level) doc)
+			  {:status 303
+			   :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "addmodel"  (let
+			    [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
+			  (clutch/update-document
+			   (merge doc
+				  {:models (merge models
+						  {(:id (first adduser)) (params "model")})}))
+			  {:status 303
+			   :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "more"      (let
+			    [adduser (clutch/get-view "users" :by-user {:key (params "model")})]
+			  (clutch/update-document
+			   (merge doc
+				  {:notes (merge (:notes doc)
+						 {(encode-nodename (params :element)) (params "more")})}))
+			  {:status 303
+			   :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "delete"    (do
+			  (clutch/update-document
+			   (merge doc
+				  {:nodes (dissoc nodes (keyword (str (params :node))))}))
+			  {:status 303
+			   :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "save"      (do (if (= (params :weight) "3") ;;maps to zero
+			      (clutch/put-document
+			       (merge doc
+				      {:links (dissoc (:links doc)
+						      (keyword (str (params :node)
+								    (params :tail))))}))
+			      (clutch/put-document
+			       (merge doc
+				      {:links
+				       (merge (:links doc)
+					      {(keyword (str (params :node)
+							     (params :tail)))
+					       {:head (params :node)
+						:tail (params :tail)
+						:weight (params :weight)}})})))
+			    {:status 303
+			     :headers {"Location" (str (base-path params) "/mode/edit")}})
+	    "download" 
+	    {:status 200
+	     :headers {"Content-Type" "text/tab-separated-values"
+		       "Content-Disposition" "attachment;filename=matrix.tsv"}
+	     :body (str "\t" (apply str (map #(str (second %) "\t") nodes)) "\n"     ;;header row
+			(apply str                                               
+			       (map                                               ;;value rows
+				(fn [tail]                                        ;;each elem as a potential tail
+				  (str (second tail) "\t"                           ;;elem name at start of row
+				       (apply str
+					      (map                                ;;each elem as a potential head
+					       (fn [head]
+						 (str (if                         ;;loop through links, finding matches
+							  (= (name (first tail))  ;; value of key,value
+							     (:tail (get links    ;; tail matches tail, get weight
+									 (keyword 
+									  (str (name (first head))
+									       (name (first tail)))))))
+							(display-weight           ;;cell value
+							 (:weight (get links (keyword
+									      (str (name (first head))
+										   (name (first tail)))))))
+							"0.0") "\t"))               ;;no link, =zero
+					       nodes))
+				       "\n"))
+				nodes)))}
+	    "bar"
+	    (if (seq nodes)
+	      (let [causes
+		    (incanter/trans
+		     (apply vector                                               
+			    (map                                               ;;value rows
+			     (fn [head]                                        ;;each elem as a potential head
+			       (apply vector
+				      (map                                ;;each elem as a potential tail
+				       (fn [tail]
+					 (if                         ;;loop through links, finding matches
+					     (= (name (first head))  ;; value of key,value
+						(:tail (get links    ;; tail matches tail, get weight
+							    (keyword 
+							     (str (name (first tail))
+								  (name (first head)))))))
+					   (let [w (:weight (get links (keyword
+									(str (name (first tail))
+									     (name (first head))))))]
+					     (num-weight w))
+					   0.0))               ;;no link, =zero
+				       nodes)))
+			     nodes)))
+		    states (incanter/matrix 1 (count nodes) 1)
+		    squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
+		    out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
+		    minusahalf (map #(- % 0.5) out)
+		    chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
+						 :y-label "")
+			    (chart/set-theme (StandardChartTheme. "theme"))
+			    (.setBackgroundPaint java.awt.Color/lightGray)
+			    (->
+			     .getPlot
+			     .getDomainAxis
+			     (.setCategoryLabelPositions
+			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
+		    out-stream (ByteArrayOutputStream.)
+		    in-stream (do
+				(incanter/save chart out-stream :width 600 :height 150)
+				(ByteArrayInputStream. 
+				 (.toByteArray out-stream)))]
+		(exportChartAsSVG chart))
+	      "<h2>Things you can do from here...</h2>
 <h3>Add some nodes..</h3>
 <p>Use the drop down selectors on the second row to select a concept, then Add</p>")
         "edit"
@@ -551,21 +558,20 @@
         (page/html5
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-          [:script {:src "/iasess/js/script.js"}]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
           [:h2 "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
 	  [:div {:class "register"}
 	   [:h3 "Registered users please login"]
 	  (form/form-to [:post "/iasess/login"]
-			(form/text-field "username")
-			(form/password-field "password")
+			"Username " (form/text-field "username")
+			" Password " (form/password-field "password")
 			(form/submit-button "Login"))]
 	  [:div {:class "register"}
 	   [:h3 "New users please register"]
 	   (form/form-to [:post "/iasess/mode/adduser"]
-			  (form/text-field "username")
-			  (form/password-field "password")
+			  "Username " (form/text-field "username")
+			  " Password " (form/password-field "password")
 			  (form/submit-button "Register"))]
 	  [:em error]]))
 
@@ -589,7 +595,7 @@
       (if (seq (get-user (params :username)))
 	{:status 200 :headers {} :body (login params "User exists")}
         (do
-          (create-user (params :username) (params :password))
+          (create-user (params :username) (params :password) (params :context))
           (workflows/make-auth {:username (params :username)
                                 :password (creds/hash-bcrypt (params :password))
                                 :roles #{"ie.endaten.iasess/iasess"}}))))))
