@@ -348,13 +348,15 @@
                                    {:context (params :context)}))
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "add"        (do
-                                                  (clutch/update-document
-			    (merge doc
-				   {:nodes (merge nodes
-						  {(encode-nodename (params :element)) (params :element)})}))
-			   {:status 303
-			    :headers {"Location" (str (base-path params) "/mode/edit")}})
+            "add"        (if (= "Custom..." (params "element"))
+                           nil
+                           (do
+                            (clutch/update-document
+                             (merge doc
+                                    {:nodes (merge nodes
+                                                   {(encode-nodename (params :element)) (params :element)})}))
+                            {:status 303
+                             :headers {"Location" (str (base-path params) "/mode/edit")}}))
 	    "addnew"    (do
 			  (new-concept (params :id) (params :element) (params :level) doc)
 			  {:status 303
@@ -492,7 +494,7 @@
                                  [:post "/iasess/mode/add"]
                                  (form/drop-down
                                   {:onchange (str "submitform('" level "')")}
-                                  "element" (cons menustr drivers))))
+                                  "element" (cons menustr drivers "Custom..."))))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
