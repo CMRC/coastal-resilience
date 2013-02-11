@@ -15,7 +15,7 @@
             [incanter.charts :as chart]
             [hiccup.form :as form]
             [hiccup.page :as page])
-  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
+  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params, ring.middleware.session, ring.middleware.session.cookie
         dorothy.core)
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream
@@ -590,5 +590,8 @@
 (defn -main
   "Run the jetty server."
   [& args]
-  (run-jetty (wrap-params secured-app) {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
+  (run-jetty (wrap-session
+              (wrap-params secured-app)
+              {:cookie-name "climateireland.ie"
+               :store (cookie-store)}) {:port (Integer. (get (System/getenv) "PORT" "8000"))}))
 
