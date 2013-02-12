@@ -565,24 +565,29 @@
                     [:script {:src "/iasess/js/script.js"}]])))
 
 (defn my-workflow [{:keys [uri request-method params session]}]
-  (do
-    (println params)
-    (when (and (= uri "/iasess/mode/adduser")
-               (= request-method :post))
-      (if (seq (get-user (params :username)))
-	{:status 200 :headers {} :body (login params "User exists")}
-        (do
-          (create-user (params :username) (params :password) (params :context))
-          (workflows/make-auth {:username (params :username)
-                                :password (creds/hash-bcrypt (params :password))
-                                :roles #{"ie.endaten.iasess/iasess"}}))))))
+  (when (and (= uri "/iasess/mode/adduser")
+	     (= request-method :post))
+    (if (seq (get-user (params :username)))
+      {:status 200 :headers {} :body (login params "User exists")}
+      (do
+	(create-user (params :username) (params :password) (params :context))
+	(workflows/make-auth {:username (params :username)
+			      :password (creds/hash-bcrypt (params :password))
+			      :roles #{"ie.endaten.iasess/iasess"}})))))
+
+(defn session-workflow [{:keys [uri request-method params session]}]
+  (when (and (= uri "/iasess/login")
+	     (= request-method :get))
+    (when (nil? (:cemerick/friend/identity session))
+      (if-let [username (:username session)]
+	(workflows/make-auth (user/one {:username username}))))))
 
 (def secured-app
   (handler/site
    (friend/authenticate
     webservice
     {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
-     :workflows [my-workflow (workflows/interactive-form)] 
+     :workflows [my-workflow session-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})
