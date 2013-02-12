@@ -565,7 +565,7 @@
                     [:script {:src "/iasess/js/script.js"}]])))
 
 (defn my-workflow [{:keys [uri request-method params session]}]
-  (when (and (= uri "/iasess/mode/adduser")
+  (when (and (= uri "/iasess/mode/*")
 	     (= request-method :post))
     (if (seq (get-user (params :username)))
       {:status 200 :headers {} :body (login params "User exists")}
@@ -576,7 +576,7 @@
 			      :roles #{"ie.endaten.iasess/iasess"}})))))
 
 (defn session-workflow [{:keys [uri request-method params session]}]
-  (when (and (= uri "/iasess/login")
+  (when (and (re-matches "/iasess/mode.*" uri)
 	     (= request-method :get))
     (if (nil? (:cemerick/friend/identity session))
       (if-let [username (:username session)]
