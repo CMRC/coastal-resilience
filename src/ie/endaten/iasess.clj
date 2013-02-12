@@ -580,7 +580,7 @@
 	     (= request-method :get))
     (when (nil? (:cemerick/friend/identity session))
       (if-let [username (:username session)]
-	(workflows/make-auth (user/one {:username username}))))))
+	(workflows/make-auth {:username username})))))
 
 (def secured-app
   (handler/site
