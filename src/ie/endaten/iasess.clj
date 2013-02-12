@@ -578,9 +578,10 @@
 (defn session-workflow [{:keys [uri request-method params session]}]
   (when (and (= uri "/iasess/login")
 	     (= request-method :get))
-    (when (nil? (:cemerick/friend/identity session))
+    (if (nil? (:cemerick/friend/identity session))
       (if-let [username (:username session)]
-	(workflows/make-auth {:username username})))))
+	(workflows/make-auth {:username username}))
+      {:status 200 :headers {} :body (login params (apply str session))})))
 
 (def secured-app
   (handler/site
