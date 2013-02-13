@@ -15,8 +15,8 @@
             [incanter.charts :as chart]
             [hiccup.form :as form]
             [hiccup.page :as page])
-  (:use compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
-        ring.middleware.session.cookie, dorothy.core)
+  (:use [couch-session.core :only (couch-store)] compojure.core, compojure.route, ring.adapter.jetty, ring.middleware.params,
+        ring.middleware.session.cookie, ring.middleware.session.store, dorothy.core)
   (:import (java.io ByteArrayOutputStream
                     ByteArrayInputStream
                     OutputStreamWriter)
@@ -33,7 +33,7 @@
 
 #_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
 
-(def db "resilience")
+(def db "http://anthony:Gereb0em@localhost:5984/resilience")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
@@ -161,7 +161,6 @@
 (defn get-user [email]
   (clutch/with-db db
     (println "email: " email)
-    (println "users: " (clutch/get-view "users" :by-user {:key email}))
     (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
 (defn create-user [email password context]
@@ -287,7 +286,7 @@
                        :clojure
                        {:by-user
                         {:map (fn [doc] [[(:username doc) doc]])}}))))
-#_(save-views)
+(save-views)
 
 (defn new-concept [user concept level doc]
   (clutch/with-db db
@@ -302,6 +301,7 @@
 (defn edit-links-html [params]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
+          p (println params)
           doc (get-user (params :id))
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
@@ -488,11 +488,11 @@
                           {:onchange "submitform('file')"}
                           "element" [(str "Welcome: " (params :id)) "Logout" "Download"]))
            (map (fn [[level menustr]]
-                   (form/form-to {:id level}
-                                 [:post "/iasess/mode/add"]
-                                 (form/drop-down
-                                  {:onchange (str "submitform('" level "')")}
-                                  "element" (cons menustr drivers))))
+                  (form/form-to {:id level}
+                                [:post "/iasess/mode/add"]
+                                (form/drop-down
+                                 {:onchange (str "submitform('" level "')")}
+                                 "element" (cons menustr level))))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"
@@ -516,8 +516,13 @@
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))
 
 (defn auth-edit-links-html [req]
-  (friend/authorize #{"ie.endaten.iasess/iasess"}
-                    (edit-links-html (assoc (:params req) :id (:current (friend/identity req))))))
+  "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
+  (let [p (println req)
+        id (get-in req [:session "identity"])
+        auth (assoc-in id [:current] (keyword (:current id)))
+        p3 (set! friend/*identity* auth)]
+    (friend/authorize #{"ie.endaten.iasess/iasess"}
+                      (edit-links-html (assoc (:params req) :id (:current id))))))
 
 (defn login [params  error]
         (page/html5
@@ -540,59 +545,43 @@
 			  (form/submit-button "Register"))]
 	  [:em error]]))
 
+;;(defonce my-session (cookie-store {:key "1234abcdqwer    "}))
+(def store
+  (clutch/get-database (com.ashafa.clutch.utils/url db)))
 
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (login (request :params) ""))
+  (ANY "/iasess/login" request (login (request :params) (str "auth " (friend/current-authentication))))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
   (GET "/iasess" request (ring.util.response/redirect "/iasess/mode/edit"))
-  (friend/logout (ANY "/iasess/logout" request (ring.util.response/redirect "/iasess/login")))
-  
-  (resources "/iasess")
-  (GET "/iasess/test" request
-       (page/xhtml [:head
-                    [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-                    [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
-                   [:body
-                    [:div {:class "concepts"}
-                     (form/form-to {:id "drivers"}
-                                    [:post "/iasess/mode/add"]
-                                    (form/drop-down
-                                     {:onchange "submitform('drivers')"}
-                                     "Drivers" (cons "Drivers" drivers)))]
-                    [:script {:src "/iasess/js/script.js"}]])))
+  (ANY "/iasess/logout" request (update-in (ring.util.response/redirect "/iasess/login") [:session] dissoc ::identity))
+  (resources "/iasess"))
 
-(defn my-workflow [{:keys [uri request-method params session]}]
-  (when (and (= uri "/iasess/mode/*")
-	     (= request-method :post))
-    (if (seq (get-user (params :username)))
-      {:status 200 :headers {} :body (login params "User exists")}
-      (do
-	(create-user (params :username) (params :password) (params :context))
-	(workflows/make-auth {:username (params :username)
-			      :password (creds/hash-bcrypt (params :password))
-			      :roles #{"ie.endaten.iasess/iasess"}})))))
 
-(defn session-workflow [{:keys [uri request-method params session]}]
-  (when (and (re-matches "/iasess/mode.*" uri)
-	     (= request-method :get))
-    (if (nil? (:cemerick/friend/identity session))
-      (if-let [username (:username session)]
-	(workflows/make-auth {:username "anthony"}))
-      {:status 200 :headers {} :body (login params (apply str session))})))
+(defn my-workflow [{:keys [uri request-method params]}]
+  (do
+    (when (and (= uri "/iasess/mode/adduser")
+               (= request-method :post))
+      (if (seq (get-user (params :username)))
+        {:status 200 :headers {} :body (login params "User exists")}
+        (do
+          (create-user (params :username) (params :password) (params :context))
+          (workflows/make-auth {:username (params :username)
+                                :password (creds/hash-bcrypt (params :password))
+                                :roles #{::iasess}}))))))
 
 (def secured-app
   (handler/site
    (friend/authenticate
     webservice
     {:credential-fn (partial creds/bcrypt-credential-fn get-user) 
-     :workflows [my-workflow session-workflow (workflows/interactive-form)] 
+     :workflows [my-workflow (workflows/interactive-form)] 
      :login-uri "/iasess/login" 
      :unauthorized-redirect-uri "/iasess/login" 
      :default-landing-uri "/iasess/mode/edit"})
-   {:session {:store (cookie-store)}}))
+   {:session {:store (couch-store store)}}))
 
 (defn -main
   "Run the jetty server."
