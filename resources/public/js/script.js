@@ -164,15 +164,19 @@ document.body.addEventListener('mouseout',function(e){
     }
 },false);
 
-function submitform(fname)
+function submitform(fname,elem)
 {
-    document.getElementById(fname).submit();
+    if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
+	document.getElementById("newconcept").style.display = "block";
+    else
+	document.getElementById(fname).submit();
 }
 
 function infotext(text)
 {
     document.getElementById("info-text").innerHTML = text;
 }
+
 
 
 
