@@ -482,8 +482,9 @@
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body {:ontouchstart ""}
           [:div {:id "newconcept"}
-           (form/form-to [:post "/iasess/mode/add"]
+           (form/form-to [:post "/iasess/mode/addnew"]
                          (form/text-field "element")
+                         (form/drop-down "level" (keys all-concepts))
                          (form/submit-button "Submit"))]
           [:div {:class "concepts"}
            (form/form-to {:id "file"}
@@ -495,7 +496,7 @@
                   (form/form-to {:id level}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "submitform('" level "',this)")}
+                                 {:onchange (str "submitform('" menustr "',this)")}
                                  "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"

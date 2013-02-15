@@ -167,7 +167,10 @@ document.body.addEventListener('mouseout',function(e){
 function submitform(fname,elem)
 {
     if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
-	document.getElementById("newconcept").style.display = "block";
+    {
+	document.getElementById("newconcept").style.display = "block";	
+	document.getElementById("level").value = fname;
+    }
     else
 	document.getElementById(fname).submit();
 }
