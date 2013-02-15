@@ -493,7 +493,7 @@
                           {:onchange "submitform('file')"}
                           "element" [(str "Welcome: " (params :id)) "Logout" "Download"]))
            (map (fn [[level menustr]]
-                  (form/form-to {:id level}
+                  (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
                                  {:onchange (str "submitform('" menustr "',this)")}
