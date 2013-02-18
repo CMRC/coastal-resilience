@@ -481,6 +481,11 @@
           [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body {:ontouchstart ""}
+          [:div {:id "newconcept"}
+           (form/form-to [:post "/iasess/mode/addnew"]
+                         (form/text-field "element")
+                         (form/drop-down "level" (keys all-concepts))
+                         (form/submit-button "Submit"))]
           [:div {:class "concepts"}
            (form/form-to {:id "file"}
                          [:get "/iasess/mode/file"]
@@ -488,11 +493,11 @@
                           {:onchange "submitform('file')"}
                           "element" [(str "Welcome: " (params :id)) "Logout" "Download"]))
            (map (fn [[level menustr]]
-                  (form/form-to {:id level}
+                  (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "submitform('" level "')")}
-                                 "element" (cons menustr level))))
+                                 {:onchange (str "submitform('" menustr "',this)")}
+                                 "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"
                  state-changes "State Changes"

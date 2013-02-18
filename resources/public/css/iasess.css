@@ -171,10 +171,17 @@ h1{
     padding: 5px;
     border: 0;
     border-radius: 0;
-    -webkit-appearance: none;
+    #-webkit-appearance: none;
     float: left;
 }
 
-.concepts {
-    background-image: url(/iasess/images/bg.png") no-repeat right;
+#newconcept {
+    top: 40%;
+    left: 40%;
+    width: 20%;
+    height: 20em;
+    position: absolute;
+    z-index: 10;
+    background-color: whitesmoke;
+    display: none;
 }
