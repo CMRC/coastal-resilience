@@ -168,8 +168,15 @@ function submitform(fname,elem)
 {
     if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
     {
-	document.getElementById("newconcept").style.display = "block";	
-	document.getElementById("level").value = fname;
+	var dd = document.getElementById("newconcept");
+	var lev = document.getElementById("level");
+	dd.style.display = "block";	
+	for(var i = 0, j = lev.options.length; i < j; ++i) {
+            if(lev.options[i].innerHTML === fname) {
+		lev.selectedIndex = i;
+		break;
+            }
+	}
     }
     else
 	document.getElementById(fname).submit();
