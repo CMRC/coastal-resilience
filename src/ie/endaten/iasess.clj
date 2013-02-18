@@ -356,7 +356,8 @@
 			   {:status 303
 			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addnew"    (do
-			  (new-concept (params :id) (params :element) (params :level) doc)
+                          (when (> (count (params :element)) 0)
+                            (new-concept (params :id) (params :element) (params :level) doc))
 			  {:status 303
 			   :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addmodel"  (let
