@@ -288,7 +288,7 @@
                         {:map (fn [doc] [[(:username doc) doc]])}}))))
 (save-views)
 
-(defn new-concept [user concept level doc]
+(defn new-concept [user concept level details doc]
   (clutch/with-db db
     (clutch/update-document
      (merge doc
@@ -357,7 +357,7 @@
 			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addnew"    (do
                           (when (> (count (params :element)) 0)
-                            (new-concept (params :id) (params :element) (params :level) doc))
+                            (new-concept (params :id) (params :element) (params :level) (params :details) doc))
 			  {:status 303
 			   :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addmodel"  (let
@@ -482,12 +482,16 @@
           [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body {:ontouchstart ""}
-          [:div {:id "newconcept"}
+          [:div {:id "newconcept"}]
+          [:div {:id "newconcept-in"}
+           [:h3 "Custom Concept"]
            (form/form-to [:post "/iasess/mode/addnew"]
-                         (form/text-field "element")
-                         (form/drop-down "level" (keys all-concepts))
-                         (form/submit-button "Submit"))]
-          [:div {:class "concepts"}
+                         [:div {:class "concept-name"}
+                          (form/text-field "element")
+                          (form/drop-down "level" (keys all-concepts))]
+                         [:h4 "Details"] (form/text-area "details")
+                         [:p (form/submit-button "Submit")])]
+         [:div {:class "concepts"}
            (form/form-to {:id "file"}
                          [:get "/iasess/mode/file"]
                          (form/drop-down
