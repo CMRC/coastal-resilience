@@ -168,11 +168,24 @@ function submitform(fname,elem)
 {
     if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
     {
-	document.getElementById("newconcept").style.display = "block";	
-	document.getElementById("level").value = fname;
+	document.getElementById("newconcept").style.display = "block";
+	document.getElementById("newconcept-in").style.display = "block";
+	var lev = document.getElementById("level");
+	for(var i = 0, j = lev.options.length; i < j; ++i) {
+            if(lev.options[i].innerHTML === fname) {
+		lev.selectedIndex = i;
+		break;
+            }
+	}
+	elem.options.selectedIndex = 0; //set it back to heading
     }
     else
 	document.getElementById(fname).submit();
+}
+function hideconcept()
+{
+    document.getElementById("newconcept").style.display = "none";
+    document.getElementById("newconcept-in").style.display = "none";
 }
 
 function infotext(text)

@@ -174,14 +174,36 @@ h1{
     #-webkit-appearance: none;
     float: left;
 }
-
 #newconcept {
-    top: 40%;
-    left: 40%;
-    width: 20%;
-    height: 20em;
     position: absolute;
-    z-index: 10;
-    background-color: whitesmoke;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    background-color: black;
+    opacity: 0.3;
     display: none;
+}
+#newconcept-in {
+    position: absolute;
+    top: 30%;
+    left: 40%;
+    width: 25em;
+    height: 25em;
+    margin: 1em;
+    padding: 1em;
+    box-shadow: -3px -3px 3px 0px #555;
+    background-color: white;
+    opacity: 1;
+    z-index: 101;
+    display: none;
+}
+#newconcept-in textarea {
+    height: 6em;
+    width: 100%;
+}
+#newconcept-in .concept-name {
+    width: 100%;
+}
+#newconcept-in .close {
+    float: right;
 }
