@@ -177,9 +177,15 @@ function submitform(fname,elem)
 		break;
             }
 	}
+	elem.options.selectedIndex = 0; //set it back to heading
     }
     else
 	document.getElementById(fname).submit();
+}
+function hideconcept()
+{
+    document.getElementById("newconcept").style.display = "none";
+    document.getElementById("newconcept-in").style.display = "none";
 }
 
 function infotext(text)

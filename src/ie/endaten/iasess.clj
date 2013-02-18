@@ -484,6 +484,7 @@
          [:body {:ontouchstart ""}
           [:div {:id "newconcept"}]
           [:div {:id "newconcept-in"}
+           [:a {:href "javascript: hideconcept()" :class "close"} "Close"]
            [:h3 "Custom Concept"]
            (form/form-to [:post "/iasess/mode/addnew"]
                          [:div {:class "concept-name"}

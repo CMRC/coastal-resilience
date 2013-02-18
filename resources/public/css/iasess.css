@@ -204,3 +204,6 @@ h1{
 #newconcept-in .concept-name {
     width: 100%;
 }
+#newconcept-in .close {
+    float: right;
+}
