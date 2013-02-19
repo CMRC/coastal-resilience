@@ -166,7 +166,7 @@ document.body.addEventListener('mouseout',function(e){
 
 function submitform(fname,elem)
 {
-    if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
+    if(elem && elem.options[elem.selectedIndex].innerHTML == "Custom...")
     {
 	document.getElementById("newconcept").style.display = "block";
 	document.getElementById("newconcept-in").style.display = "block";

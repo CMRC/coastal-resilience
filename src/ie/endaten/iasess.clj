@@ -262,14 +262,14 @@
                                    %1))
                               {} links)
           nodes-subgraph (fn [node-type] (into [{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:splines :true :stylesheet "/iasess/css/style.css"
-                                 :size "12,7"}]
+          links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :true
+                                 :size "8,8" :overlap :false :mode "hier"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
                                                         links-subgraph))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout :dot})
+       (= (params :format) "img") (render dot-out {:format :svg :layout :neato})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
