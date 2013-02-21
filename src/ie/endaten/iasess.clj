@@ -224,7 +224,7 @@
                               {} links)
           nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
           links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "10,8" :overlap "9:prism"}]
+                                 :size "10,8" :overlap "9 :prism"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
@@ -257,7 +257,15 @@
                               {concept level})
              :nodes (merge (:nodes doc)
                            {(encode-nodename concept) concept})}))))
-  
+
+(defn popup [id body]
+  "create a popup menu for creating a new concept"
+  [:div
+   [:div {:id id :class "popup"}]
+   [:div {:id (str id "-in") :class "popup-in"}
+    [:a {:href (str "javascript: hideconcept('" id "')") :class "close"} "Close"]
+    body]])
+
 
 (defn edit-links-html [params]
   (clutch/with-db db
@@ -435,35 +443,43 @@
         (page/xhtml
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-          [:script {:type "text/javascript"}
-           "var dojoConfig = { parseOnLoad: true };var mapgrp = 'Iasess Dingle';"]
-          [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
-          [:script {:src "/iasess/js/esri.js"}]
           [:style {:type "text/css"} "@import \"http://serverapi.arcgisonline.com/jsapi/arcgis/3.3/js/esri/css/esri.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
-          [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
-         [:body {:ontouchstart ""}
-          [:div {:id "newconcept"}]
-          [:div {:id "newconcept-in"}
-           [:a {:href "javascript: hideconcept()" :class "close"} "Close"]
-           [:h3 "Custom Concept"]
-           (form/form-to [:post "/iasess/mode/addnew"]
-                         [:div {:class "concept-name"}
-                          (form/text-field "element")
-                          (form/drop-down "level" (keys all-concepts))]
-                         [:h4 "Details"] (form/text-area "details")
-                         [:p (form/submit-button "Submit")])]
-         [:div {:class "concepts"}
+          [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]
+          [:script {:type "text/javascript"}
+           (str "var dojoConfig = { parseOnLoad: true };var mapgrp = '" (doc :context) "';")]
+          [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
+          [:script {:src "/iasess/js/esri.js"}]]
+         [:body
+          (popup "newconcept"
+                 [:div {:class "concept-name"}
+                  [:h3 "Concept Name"]
+                  (form/form-to [:post "/iasess/mode/addnew"]
+                                (form/text-field "element")
+                                (form/drop-down "level" (keys all-concepts)))
+                  [:h4 "Details"] (form/text-area "details")
+                  [:p (form/submit-button "Submit")]])
+          (popup "context"
+                 [:div {:class "concept-name"}
+                  [:h3 "Context"]
+                  (form/form-to [:post "/iasess/mode/setcontext"]
+                                (form/text-field "context")
+                                [:p (form/submit-button "Submit")])
+                  [:p [:a {:href "https://www.arcgis.com/home/signin.html"}
+                       "Register with ArcGIS.com"]
+                   "to create a group which can be used as context. All public maps "
+                   "in the group will be displayed in your map window"]])
+          [:div {:class "concepts"}
            (form/form-to {:id "file"}
                          [:get "/iasess/mode/file"]
                          (form/drop-down
-                          {:onchange "submitform('file')"}
-                          "element" [(str "Welcome: " (params :id)) "Logout" "Download"]))
+                          {:onchange "submitform('file',this,'context')"}
+                          "element" [(str "Welcome: " (params :id)) "Set Context..." "Logout" "Download"]))
            (map (fn [[level menustr]]
                   (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "submitform('" menustr "',this)")}
+                                 {:onchange (str "submitform('" menustr "',this,'newconcept')")}
                                  "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"
@@ -514,8 +530,10 @@
 	   (form/form-to [:post "/iasess/mode/adduser"]
 			  "Username " (form/text-field "username")
 			  " Password " (form/password-field "password")
-			  (form/submit-button "Register"))]
-	  [:em error]]))
+			  (form/submit-button "Register"))
+           [:em error]
+           [:p "iasess is a tool that can help you think about the consequences of your plans. "
+            "Please don't use it to try and predict the future. Seriously."]]]))
 
 ;;(defonce my-session (cookie-store {:key "1234abcdqwer    "}))
 (def store
@@ -523,7 +541,7 @@
 
 (defroutes webservice
   ;;links for editing
-  (ANY "/iasess/login" request (login (request :params) (str "auth " (friend/current-authentication))))
+  (ANY "/iasess/login" request (login (request :params) ""))
   (ANY "/iasess/mode/:mode" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:node" request (auth-edit-links-html request))
   (GET "/iasess/mode/:mode/:tail/:node/:weight" request (auth-edit-links-html request))
