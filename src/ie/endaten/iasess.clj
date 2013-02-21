@@ -184,7 +184,7 @@
                                          :width "0.5"
                                          :fixedsize :true
                                          :style :filled
-                                         :color colour
+                                         :color "white"
                                          :fillcolor colour})
           nodes-graph (reduce
                        #(case (level (second %2))
@@ -224,13 +224,13 @@
                               {} links)
           nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
           links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "10,8" :overlap :false}]
+                                 :size "10,8" :overlap "9:prism"}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
                                                         links-subgraph))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout :sfdp})
+       (= (params :format) "img") (render dot-out {:format :svg :layout :fdp})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
