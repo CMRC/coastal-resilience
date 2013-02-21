@@ -1,12 +1,12 @@
 //view-source:http://phrogz.net/svg/drag_under_transformation.xhtml
 var svg   = document.getElementById('graph').getElementsByTagName('svg')[0];
-var map   = document.getElementById('map');
+var map   = document.getElementById('mainMap');
 var svgNS = svg.getAttribute('xmlns');
 var xlinkNS = 'http://www.w3.org/1999/xlink';
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var pt    = svg.createSVGPoint();
 var fromNode;
-var g = document.getElementById('graph1');
+var g = document.getElementById('graph0');
 
 function cursorPoint(evt,tgt){
     pt.x = evt.clientX; 
@@ -164,12 +164,13 @@ document.body.addEventListener('mouseout',function(e){
     }
 },false);
 
-function submitform(fname,elem)
+function submitform(fname,elem,id)
 {
-    if(elem.options[elem.selectedIndex].innerHTML == "Custom...")
+    var pattern = /\.\.\./g;
+    if(pattern.test(elem && elem.options[elem.selectedIndex].innerHTML))
     {
-	document.getElementById("newconcept").style.display = "block";
-	document.getElementById("newconcept-in").style.display = "block";
+	document.getElementById(id).style.display = "block";
+	document.getElementById(id + "-in").style.display = "block";
 	var lev = document.getElementById("level");
 	for(var i = 0, j = lev.options.length; i < j; ++i) {
             if(lev.options[i].innerHTML === fname) {
@@ -179,13 +180,13 @@ function submitform(fname,elem)
 	}
 	elem.options.selectedIndex = 0; //set it back to heading
     }
-    else
+    else 
 	document.getElementById(fname).submit();
 }
-function hideconcept()
+function hideconcept(id)
 {
-    document.getElementById("newconcept").style.display = "none";
-    document.getElementById("newconcept-in").style.display = "none";
+    document.getElementById(id).style.display = "none";
+    document.getElementById(id + "-in").style.display = "none";
 }
 
 function infotext(text)
