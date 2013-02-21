@@ -1,12 +1,12 @@
 //view-source:http://phrogz.net/svg/drag_under_transformation.xhtml
 var svg   = document.getElementById('graph').getElementsByTagName('svg')[0];
-var map   = document.getElementById('map');
+var map   = document.getElementById('mainMap');
 var svgNS = svg.getAttribute('xmlns');
 var xlinkNS = 'http://www.w3.org/1999/xlink';
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var pt    = svg.createSVGPoint();
 var fromNode;
-var g = document.getElementById('graph1');
+var g = document.getElementById('graph0');
 
 function cursorPoint(evt,tgt){
     pt.x = evt.clientX; 

@@ -178,68 +178,28 @@
                                 (key l)
                                 ((keyword concept) concepts)))
           g {}
+          attributes (fn [label colour] {:xlabel label
+                                         :label ""
+                                         :shape :circle
+                                         :width "0.5"
+                                         :fixedsize :true
+                                         :style :filled
+                                         :color colour
+                                         :fillcolor colour})
           nodes-graph (reduce
                        #(case (level (second %2))
                           nil
-                          (assoc-in %1 [:drivers (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "lightblue"
-                                     :fillcolor "white"})
+                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "black"))
                           "Drivers"
-                          (assoc-in %1 [:drivers (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "lightblue"
-                                     :fillcolor "white"})
+                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "lightblue"))
                           "Pressures"
-                          (assoc-in %1 [:pressures (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "skyblue"
-                                     :fillcolor "white"})
+                          (assoc-in %1 [:pressures (first %2)] (attributes (second %2) "skyblue"))
                           "State Changes"
-                          (assoc-in %1 [:state-changes (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "steelblue"
-                                     :fillcolor "white"})
+                          (assoc-in %1 [:state-changes (first %2)] (attributes (second %2) "steelblue"))
                           "Welfares"
-                          (assoc-in %1 [:impacts (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "beige"
-                                     :fillcolor "white"})
+                          (assoc-in %1 [:impacts (first %2)] (attributes (second %2) "beige"))
                           "Responses"
-                          (assoc-in %1 [:responses (first %2)]
-                                    {:label (apply str (interpose "\\n" (clojure.string/split (second %2) #" ")))
-                                     :shape :circle
-                                     :width "1"
-                                     :fixedsize :true
-                                     :fontsize "10"
-                                     :style :filled
-                                     :color "brown"
-                                     :fillcolor "white"}))
+                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown")))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
                                      weight (if (= (class w) String) (num-weight w) w)]
@@ -264,13 +224,13 @@
                               {} links)
           nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
           links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "8,8" :overlap :voronoi :mode :ipsep}]
+                                 :size "10,8" :overlap :false}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
                                                         links-subgraph))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout :neato})
+       (= (params :format) "img") (render dot-out {:format :svg :layout :sfdp})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
