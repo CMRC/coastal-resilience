@@ -457,7 +457,7 @@
                   (form/form-to [:post "/iasess/mode/addnew"]
                                 (form/text-field "element")
                                 (form/drop-down "level" (keys all-concepts)))
-                  [:h4 "Details"] (form/text-area "details")
+                  [:h4 "Details"] (form/text-area "details" "This data will not be saved")
                   [:p (form/submit-button "Submit")]])
           (popup "context"
                  [:div {:class "concept-name"}

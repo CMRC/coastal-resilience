@@ -71,20 +71,13 @@ svg {
 
 .concepts a {
     background: lightblue;
-<<<<<<< HEAD
-<<<<<<< HEAD
     color: steelblue;	
     display:block;
     padding:6px;
     text-align: center;
     width: 6em;
     float: left;
-=======
     color: steelblue;		
->>>>>>> parent of 3f18ec5... tweaking styles
-=======
-    color: steelblue;		
->>>>>>> parent of 3f18ec5... tweaking styles
 }
 .concepts a b{
     color: beige;	
@@ -197,13 +190,13 @@ h1{
     z-index: 101;
     display: none;
 }
-#newconcept-in textarea {
+.popup-in textarea {
     height: 6em;
     width: 100%;
 }
-#newconcept-in .concept-name {
+.popup-in .concept-name {
     width: 100%;
 }
-#newconcept-in .close {
+.popup-in .close {
     float: right;
 }
