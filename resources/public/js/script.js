@@ -102,6 +102,11 @@ document.body.addEventListener('contextmenu',function(e){
 	var deleteurl = 'delete/' + e.target.parentNode.firstChild.firstChild.nodeValue;
 	var deletelink = document.createElementNS(xhtmlNS,'a');
 	deletelink.setAttribute('href',deleteurl);
+	//centre on this node
+	var centreurl = '/iasess/mode/edit/' + e.target.parentNode.firstChild.firstChild.nodeValue;
+	var centrelink = document.createElementNS(xhtmlNS,'a');
+	centrelink.setAttribute('href',centreurl);
+
 	var deletemenu = document.createElementNS(xhtmlNS,'ul');
 	deletemenu.style.left = e.pageX + 'px';
 	deletemenu.style.top = e.pageY + 'px';
@@ -109,9 +114,14 @@ document.body.addEventListener('contextmenu',function(e){
 	deletemenu.setAttribute('class','menu');
 	var deleteitem = document.createElementNS(xhtmlNS,'li');
 	var deletetext = document.createTextNode('Delete');
+	var centreitem = document.createElementNS(xhtmlNS,'li');
+	var centretext = document.createTextNode('Centre');
 	deletelink.appendChild(deletetext);
 	deleteitem.appendChild(deletelink);
 	deletemenu.appendChild(deleteitem);
+	centrelink.appendChild(centretext);
+	centreitem.appendChild(centrelink);
+	deletemenu.appendChild(centreitem);
 	document.body.appendChild(deletemenu);
     }
     e.preventDefault();

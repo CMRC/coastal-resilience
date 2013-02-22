@@ -77,7 +77,8 @@ svg {
     text-align: center;
     width: 6em;
     float: left;
-    color: steelblue;		
+    color: steelblue;
+    text-decoration: none;
 }
 .concepts a b{
     color: beige;	
