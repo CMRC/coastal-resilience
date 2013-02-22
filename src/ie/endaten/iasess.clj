@@ -209,7 +209,7 @@
                           "Responses"
                           (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown" :circle))
                           "Physical"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "green" :triangle)))
+                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "green" :circle)))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
                                      weight (if (= (class w) String) (num-weight w) w)]
@@ -234,13 +234,13 @@
                               {} links)
           nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
           links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "10,8" :overlap "9 :prism"}]
+                                 :size "10,8" :overlap "9 :prism" :root (if-let [root (params :node)] root "")}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
                                                         links-subgraph))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout :fdp})
+       (= (params :format) "img") (render dot-out {:format :svg :layout (if (params :node) :twopi :fdp)})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
@@ -497,7 +497,7 @@
                  impacts "Welfares"
                  responses "Responses"
                  physical "Physical"})
-           [:a [:span [:b "i"] "asess:coast"]]]
+           [:a {:href "/iasess/mode/edit"} [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
