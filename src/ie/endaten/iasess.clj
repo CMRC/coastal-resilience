@@ -141,13 +141,21 @@
     "Introduction/Enforcement of bye-laws"
     "Payment of EU Fines"
     "Construction of Coastal/Flood Defences"
-    "Re-location away from coast"]})
+    "Re-location away from coast"]
+
+   "Physical"
+   ["Temperature"
+    "Pressure"
+    "Precipitation"
+    "Wind Speed"
+    "Sea Level"]})
 
 (def drivers (get all-concepts "Drivers"))
 (def pressures (get all-concepts "Pressures"))
 (def state-changes (get all-concepts "State Changes"))
 (def impacts (get all-concepts "Welfares"))
 (def responses (get all-concepts "Responses"))
+(def physical (get all-concepts "Physical"))
 
 
 (defn if-weight [weight] (if weight weight "0"))
@@ -178,28 +186,30 @@
                                 (key l)
                                 ((keyword concept) concepts)))
           g {}
-          attributes (fn [label colour] {:xlabel label
-                                         :label ""
-                                         :shape :circle
-                                         :width "0.5"
-                                         :fixedsize :true
-                                         :style :filled
-                                         :color "white"
-                                         :fillcolor colour})
+          attributes (fn [label colour shape] {:xlabel label
+                                               :label ""
+                                               :shape shape
+                                               :width "0.5"
+                                               :fixedsize :true
+                                               :style :filled
+                                               :color "white"
+                                               :fillcolor colour})
           nodes-graph (reduce
                        #(case (level (second %2))
                           nil
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "black"))
+                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "black" :circle))
                           "Drivers"
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "lightblue"))
+                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "lightblue" :circle))
                           "Pressures"
-                          (assoc-in %1 [:pressures (first %2)] (attributes (second %2) "skyblue"))
+                          (assoc-in %1 [:pressures (first %2)] (attributes (second %2) "skyblue" :circle))
                           "State Changes"
-                          (assoc-in %1 [:state-changes (first %2)] (attributes (second %2) "steelblue"))
+                          (assoc-in %1 [:state-changes (first %2)] (attributes (second %2) "steelblue" :circle))
                           "Welfares"
-                          (assoc-in %1 [:impacts (first %2)] (attributes (second %2) "beige"))
+                          (assoc-in %1 [:impacts (first %2)] (attributes (second %2) "beige" :circle))
                           "Responses"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown")))
+                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown" :circle))
+                          "Physical"
+                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "green" :triangle)))
                        g nodes)
           links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
                                      weight (if (= (class w) String) (num-weight w) w)]
@@ -456,9 +466,9 @@
                   [:h3 "Concept Name"]
                   (form/form-to [:post "/iasess/mode/addnew"]
                                 (form/text-field "element")
-                                (form/drop-down "level" (keys all-concepts)))
-                  [:h4 "Details"] (form/text-area "details" "This data will not be saved")
-                  [:p (form/submit-button "Submit")]])
+                                (form/drop-down "level" (keys all-concepts))
+                                [:h4 "Details"] (form/text-area "details" "These data will not be saved")
+                                [:p (form/submit-button "Submit")])])
           (popup "context"
                  [:div {:class "concept-name"}
                   [:h3 "Context"]
@@ -485,7 +495,8 @@
                  pressures "Pressures"
                  state-changes "State Changes"
                  impacts "Welfares"
-                 responses "Responses"})
+                 responses "Responses"
+                 physical "Physical"})
            [:a [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
            [:div {:id "graph"}
