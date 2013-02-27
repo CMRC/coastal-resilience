@@ -510,6 +510,8 @@
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]
+          [:script {:src "http://d3js.org/d3.v3.min.js"}]
+          [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
           [:script {:src "/iasess/js/script.js"}]])
           {:status 303
          :headers {"Location" (str (base-path params) "/mode/edit")}}))))

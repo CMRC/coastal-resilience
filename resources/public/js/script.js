@@ -7,6 +7,11 @@ var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var pt    = svg.createSVGPoint();
 var fromNode;
 var g = document.getElementById('graph0');
+var fisheye = d3.fisheye.circular()
+    .radius(200)
+    .distortion(2);
+
+
 
 function cursorPoint(evt,tgt){
     pt.x = evt.clientX; 
@@ -145,19 +150,50 @@ svg.addEventListener('mouseover',function(e){
 		}
 		m = m.nextSibling;
 	    }
-	} else {
-	    infotext("Information Panel: Mouse over a node to connect to " + fromNode
-		    + " or refresh your browser to cancel operation");
 	}
-    } else {
+	else {
+	    infotext("Information Panel: Mouse over a node to connect to " + fromNode
+		     + " or refresh your browser to cancel operation");
+	}
+    } 
+    // else if (e.target.parentNode.getAttribute('class') == 'node') {
+    // 	var m = e.target;
+    // 	if(m.tagName == 'ellipse') {
+    // 	    var pos = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
+    // 	    fisheye.focus(e);
+    // 	    d3.selectAll("ellipse")
+    // 		.attr("rx",function() { 
+    // 		    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
+    // 		    this.fisheye = fisheye(fish);
+    // 		    return (this.fisheye.x / 10);
+    // 		});
+    // 	}
+    // }
+    else {
 	infotext("Information Panel: Select a node to begin connecting. Right click on node to delete");
     }
+},false);
+
+svg.addEventListener("mousemove", function(e) {
+    cp = cursorPoint(e,g);
+    fisheye.focus([cp.x,cp.y]);
+    d3.selectAll("ellipse")
+	.attr("rx",function() { 
+	    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
+	    this.fisheye = fisheye(fish);
+	    return (this.fisheye.z * 18);
+	})
+	.attr("ry",function() { 
+	    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
+	    this.fisheye = fisheye(fish);
+	    return (this.fisheye.z * 18);
+	});
 },false);
 
 map.addEventListener('mouseover',function(e){
     infotext("Information Panel: Drag to pan, scroll button to zoom, or select a feature for more information");
 },false);
-		     
+
 document.body.addEventListener('mouseout',function(e){
     if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
        && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
@@ -205,8 +241,6 @@ function infotext(text)
 }
 
 
-
-
 var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33996197-1']);
 _gaq.push(['_trackPageview']);
@@ -216,3 +250,4 @@ _gaq.push(['_trackPageview']);
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
+
