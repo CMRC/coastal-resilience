@@ -8,8 +8,8 @@ var pt    = svg.createSVGPoint();
 var fromNode;
 var g = document.getElementById('graph0');
 var fisheye = d3.fisheye.circular()
-    .radius(200)
-    .distortion(2);
+    .radius(250)
+    .distortion(3);
 
 
 
@@ -156,37 +156,46 @@ svg.addEventListener('mouseover',function(e){
 		     + " or refresh your browser to cancel operation");
 	}
     } 
-    // else if (e.target.parentNode.getAttribute('class') == 'node') {
-    // 	var m = e.target;
-    // 	if(m.tagName == 'ellipse') {
-    // 	    var pos = { x:m['cx'].animVal.value, y:m['cy'].animVal.value };
-    // 	    fisheye.focus(e);
-    // 	    d3.selectAll("ellipse")
-    // 		.attr("rx",function() { 
-    // 		    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
-    // 		    this.fisheye = fisheye(fish);
-    // 		    return (this.fisheye.x / 10);
-    // 		});
-    // 	}
-    // }
     else {
 	infotext("Information Panel: Select a node to begin connecting. Right click on node to delete");
     }
 },false);
 
+for (var a=svg.querySelectorAll('ellipse'),i=0,len=a.length;i<len;++i){
+    (function(ellipse) {
+	ellipse['fish'] = {x:ellipse['cx'].animVal.value,y:ellipse['cy'].animVal.value};
+    })(a[i]);
+}
+
+for (var b=svg.querySelectorAll('text'),i=0,len=b.length;i<len;++i){
+    (function(txt) {
+	aaaa = txt['x'].animVal.getItem(0).value;
+	txt['fish'] = {x:txt['x'].animVal.getItem(0).value,y:txt['y'].animVal.getItem(0).value};
+    })(b[i]);
+}
+
 svg.addEventListener("mousemove", function(e) {
     cp = cursorPoint(e,g);
     fisheye.focus([cp.x,cp.y]);
     d3.selectAll("ellipse")
+	.attr("cx",function() { 
+	    return fisheye(this['fish']).x;
+	})
+	.attr("cy",function() { 
+	    return fisheye(this['fish']).y;
+	})
 	.attr("rx",function() { 
-	    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
-	    this.fisheye = fisheye(fish);
-	    return (this.fisheye.z * 18);
+	    return fisheye(this['fish']).z * 18;
 	})
 	.attr("ry",function() { 
-	    var fish = {x:this['cx'].animVal.value,y:this['cy'].animVal.value};
-	    this.fisheye = fisheye(fish);
-	    return (this.fisheye.z * 18);
+	    return fisheye(this['fish']).z * 18;
+	});
+    d3.selectAll("text")
+	.attr("x",function() { 
+	    return fisheye(this['fish']).x;
+	})
+	.attr("y",function() { 
+	    return fisheye(this['fish']).y;
 	});
 },false);
 
