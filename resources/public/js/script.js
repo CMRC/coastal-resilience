@@ -8,8 +8,8 @@ var pt    = svg.createSVGPoint();
 var fromNode;
 var g = document.getElementById('graph0');
 var fisheye = d3.fisheye.circular()
-    .radius(250)
-    .distortion(3);
+    .radius(200)
+    .distortion(2);
 
 
 
@@ -177,15 +177,30 @@ for (var c=svg.querySelectorAll('path'),i=0,len=c.length;i<len;++i){
     (function(pth) {
 	d = pth.getAttribute('d');
 	if(d) {
-	    var startre = /^M(-?\d+\.\d+),(-?\d+\.\d+).*/;
+	    var startre = /^M(-?\d+\.?\d*),(-?\d+\.?\d*).*/;
 	    start = startre.exec(d);
 	    pth['start'] = {x:start[1],y:start[2]};
-	    end = /.*C(-?\d+\.\d+),(-?\d+\.\d+)\s(-?\d+\.\d+),(-?\d+\.\d+)\s(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(d);
-	    pth['c1'] = {x:end[1],y:end[2]};	    
-	    pth['c2'] = {x:end[3],y:end[4]};	    
-	    pth['c3'] = {x:end[5],y:end[6]};
+	    end = /.*C(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(d);
+	    if(end) {
+		pth['c1'] = {x:end[1],y:end[2]};	    
+		pth['c2'] = {x:end[3],y:end[4]};	    
+		pth['c3'] = {x:end[5],y:end[6]};
+	    }
 	}
     })(c[i]);
+}
+
+for (var d=svg.querySelectorAll('polygon'),i=0,len=d.length;i<len;++i){
+    (function(pg) {
+	pts = pg.getAttribute('points');
+	if(pts) {
+	    end = /(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(pts);
+	    pg['p1'] = {x:end[1],y:end[2]};	    
+	    pg['p2'] = {x:end[3],y:end[4]};	    
+	    pg['p3'] = {x:end[5],y:end[6]};	    
+	    pg['p4'] = {x:end[7],y:end[8]};
+	}
+    })(d[i]);
 }
 
 svg.addEventListener("mousemove", function(e) {
@@ -220,6 +235,14 @@ svg.addEventListener("mousemove", function(e) {
 		+ "C" + fisheye(this['c1']).x + "," + fisheye(this['c1']).y
 		+ " " + fisheye(this['c2']).x + "," + fisheye(this['c2']).y	
 		+ " " + fisheye(this['c3']).x + "," + fisheye(this['c3']).y;
+	});
+    d3.selectAll("polygon")
+	.attr("points",function() {
+	    if(this['p1'])
+		return fisheye(this['p1']).x + "," + fisheye(this['p1']).y
+		+ " " + fisheye(this['p2']).x + "," + fisheye(this['p2']).y	
+		+ " " + fisheye(this['p3']).x + "," + fisheye(this['p3']).y
+		+ " " + fisheye(this['p4']).x + "," + fisheye(this['p4']).y;
 	});
 },false);
 
