@@ -179,7 +179,8 @@ for (var c=svg.querySelectorAll('path'),i=0,len=c.length;i<len;++i){
 	if(d) {
 	    var startre = /^M(-?\d+\.?\d*),(-?\d+\.?\d*).*/;
 	    start = startre.exec(d);
-	    pth['start'] = {x:start[1],y:start[2]};
+	    if(start)
+		pth['start'] = {x:start[1],y:start[2]};
 	    end = /.*C(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(d);
 	    if(end) {
 		pth['c1'] = {x:end[1],y:end[2]};	    
