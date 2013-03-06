@@ -169,9 +169,23 @@ for (var a=svg.querySelectorAll('ellipse'),i=0,len=a.length;i<len;++i){
 
 for (var b=svg.querySelectorAll('text'),i=0,len=b.length;i<len;++i){
     (function(txt) {
-	aaaa = txt['y'].animVal.getItem(0).value;
 	txt['fish'] = {x:txt['x'].animVal.getItem(0).value,y:txt['y'].animVal.getItem(0).value};
     })(b[i]);
+}
+
+for (var c=svg.querySelectorAll('path'),i=0,len=c.length;i<len;++i){
+    (function(pth) {
+	d = pth.getAttribute('d');
+	if(d) {
+	    var startre = /^M(-?\d+\.\d+),(-?\d+\.\d+).*/;
+	    start = startre.exec(d);
+	    pth['start'] = {x:start[1],y:start[2]};
+	    end = /.*C(-?\d+\.\d+),(-?\d+\.\d+)\s(-?\d+\.\d+),(-?\d+\.\d+)\s(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(d);
+	    pth['c1'] = {x:end[1],y:end[2]};	    
+	    pth['c2'] = {x:end[3],y:end[4]};	    
+	    pth['c3'] = {x:end[5],y:end[6]};
+	}
+    })(c[i]);
 }
 
 svg.addEventListener("mousemove", function(e) {
@@ -198,6 +212,14 @@ svg.addEventListener("mousemove", function(e) {
 	.attr("y",function() { 
 	    if(this['fish'])
 		return fisheye(this['fish']).y;
+	});
+    d3.selectAll("path")
+	.attr("d",function() {
+	    if(this['start'] && this['c1'])
+		return "M" + fisheye(this['start']).x + "," + fisheye(this['start']).y
+		+ "C" + fisheye(this['c1']).x + "," + fisheye(this['c1']).y
+		+ " " + fisheye(this['c2']).x + "," + fisheye(this['c2']).y	
+		+ " " + fisheye(this['c3']).x + "," + fisheye(this['c3']).y;
 	});
 },false);
 
