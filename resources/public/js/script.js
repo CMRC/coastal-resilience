@@ -169,7 +169,7 @@ for (var a=svg.querySelectorAll('ellipse'),i=0,len=a.length;i<len;++i){
 
 for (var b=svg.querySelectorAll('text'),i=0,len=b.length;i<len;++i){
     (function(txt) {
-	aaaa = txt['x'].animVal.getItem(0).value;
+	aaaa = txt['y'].animVal.getItem(0).value;
 	txt['fish'] = {x:txt['x'].animVal.getItem(0).value,y:txt['y'].animVal.getItem(0).value};
     })(b[i]);
 }
@@ -191,11 +191,13 @@ svg.addEventListener("mousemove", function(e) {
 	    return fisheye(this['fish']).z * 18;
 	});
     d3.selectAll("text")
-	.attr("x",function() { 
-	    return fisheye(this['fish']).x;
+	.attr("x",function() {
+	    if(this['fish'])
+		return fisheye(this['fish']).x;
 	})
 	.attr("y",function() { 
-	    return fisheye(this['fish']).y;
+	    if(this['fish'])
+		return fisheye(this['fish']).y;
 	});
 },false);
 
