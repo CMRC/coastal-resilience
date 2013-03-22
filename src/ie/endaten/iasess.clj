@@ -453,13 +453,7 @@
         (page/xhtml
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-          [:style {:type "text/css"} "@import \"http://serverapi.arcgisonline.com/jsapi/arcgis/3.3/js/esri/css/esri.css\";"]
-          [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]
-          [:script {:type "text/javascript"}
-           (str "var dojoConfig = { parseOnLoad: true };var mapgrp = '" (doc :context) "';")]
-          [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
-          [:script {:src "/iasess/js/esri.js"}]]
          [:body
           (popup "newconcept"
                  [:div {:class "concept-name"}
@@ -474,11 +468,7 @@
                   [:h3 "Context"]
                   (form/form-to [:post "/iasess/mode/setcontext"]
                                 (form/text-field "context")
-                                [:p (form/submit-button "Submit")])
-                  [:p [:a {:href "https://www.arcgis.com/home/signin.html"}
-                       "Register with ArcGIS.com"]
-                   "to create a group which can be used as context. All public maps "
-                   "in the group will be displayed in your map window"]])
+                                [:p (form/submit-button "Submit")])])
           [:div {:class "concepts"}
            (form/form-to {:id "file"}
                          [:get "/iasess/mode/file"]
@@ -501,19 +491,16 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           [:div {:class "container_12"}
-            [:div {:id "mapSection" :class "grid_12 rounded"}
-             [:div {:id "mainMap"}
-              [:div {:class "gallery-nav"}
-               [:div {:class "gallery-nav-right" :onclick "getNext();"}]
-               [:div {:class "gallery-nav-left" :onclick "getPrevious();"}]]]]]]
+           [:div
+            [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
+                      :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]
-          [:script {:src "/iasess/js/script.js"}]])
-          {:status 303
-         :headers {"Location" (str (base-path params) "/mode/edit")}}))))
-
+           [:script {:src "http://d3js.org/d3.v3.min.js"}]
+           [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
+           [:script {:src "/iasess/js/script.js"}]]]])))))
+         
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
   (let [p (println req)

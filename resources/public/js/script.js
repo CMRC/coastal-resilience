@@ -7,6 +7,11 @@ var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var pt    = svg.createSVGPoint();
 var fromNode;
 var g = document.getElementById('graph0');
+var fisheye = d3.fisheye.circular()
+    .radius(200)
+    .distortion(2);
+
+
 
 function cursorPoint(evt,tgt){
     pt.x = evt.clientX; 
@@ -145,19 +150,107 @@ svg.addEventListener('mouseover',function(e){
 		}
 		m = m.nextSibling;
 	    }
-	} else {
-	    infotext("Information Panel: Mouse over a node to connect to " + fromNode
-		    + " or refresh your browser to cancel operation");
 	}
-    } else {
+	else {
+	    infotext("Information Panel: Mouse over a node to connect to " + fromNode
+		     + " or refresh your browser to cancel operation");
+	}
+    } 
+    else {
 	infotext("Information Panel: Select a node to begin connecting. Right click on node to delete");
     }
+},false);
+
+for (var a=svg.querySelectorAll('ellipse'),i=0,len=a.length;i<len;++i){
+    (function(ellipse) {
+	ellipse['fish'] = {x:ellipse['cx'].animVal.value,y:ellipse['cy'].animVal.value};
+    })(a[i]);
+}
+
+for (var b=svg.querySelectorAll('text'),i=0,len=b.length;i<len;++i){
+    (function(txt) {
+	txt['fish'] = {x:txt['x'].animVal.getItem(0).value,y:txt['y'].animVal.getItem(0).value};
+    })(b[i]);
+}
+
+for (var c=svg.querySelectorAll('path'),i=0,len=c.length;i<len;++i){
+    (function(pth) {
+	d = pth.getAttribute('d');
+	if(d) {
+	    var startre = /^M(-?\d+\.?\d*),(-?\d+\.?\d*).*/;
+	    start = startre.exec(d);
+	    if(start)
+		pth['start'] = {x:start[1],y:start[2]};
+	    end = /.*C(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(d);
+	    if(end) {
+		pth['c1'] = {x:end[1],y:end[2]};	    
+		pth['c2'] = {x:end[3],y:end[4]};	    
+		pth['c3'] = {x:end[5],y:end[6]};
+	    }
+	}
+    })(c[i]);
+}
+
+for (var d=svg.querySelectorAll('polygon'),i=0,len=d.length;i<len;++i){
+    (function(pg) {
+	pts = pg.getAttribute('points');
+	if(pts) {
+	    end = /(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)\s(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(pts);
+	    pg['p1'] = {x:end[1],y:end[2]};	    
+	    pg['p2'] = {x:end[3],y:end[4]};	    
+	    pg['p3'] = {x:end[5],y:end[6]};	    
+	    pg['p4'] = {x:end[7],y:end[8]};
+	}
+    })(d[i]);
+}
+
+svg.addEventListener("mousemove", function(e) {
+    cp = cursorPoint(e,g);
+    fisheye.focus([cp.x,cp.y]);
+    d3.selectAll("#graph ellipse")
+	.attr("cx",function() { 
+	    return fisheye(this['fish']).x;
+	})
+	.attr("cy",function() { 
+	    return fisheye(this['fish']).y;
+	})
+	.attr("rx",function() { 
+	    return fisheye(this['fish']).z * 18;
+	})
+	.attr("ry",function() { 
+	    return fisheye(this['fish']).z * 18;
+	});
+    d3.selectAll("#graph text")
+	.attr("x",function() {
+	    if(this['fish'])
+		return fisheye(this['fish']).x;
+	})
+	.attr("y",function() { 
+	    if(this['fish'])
+		return fisheye(this['fish']).y;
+	});
+    d3.selectAll("#graph path")
+	.attr("d",function() {
+	    if(this['start'] && this['c1'])
+		return "M" + fisheye(this['start']).x + "," + fisheye(this['start']).y
+		+ "C" + fisheye(this['c1']).x + "," + fisheye(this['c1']).y
+		+ " " + fisheye(this['c2']).x + "," + fisheye(this['c2']).y	
+		+ " " + fisheye(this['c3']).x + "," + fisheye(this['c3']).y;
+	});
+    d3.selectAll("#graph polygon")
+	.attr("points",function() {
+	    if(this['p1'])
+		return fisheye(this['p1']).x + "," + fisheye(this['p1']).y
+		+ " " + fisheye(this['p2']).x + "," + fisheye(this['p2']).y	
+		+ " " + fisheye(this['p3']).x + "," + fisheye(this['p3']).y
+		+ " " + fisheye(this['p4']).x + "," + fisheye(this['p4']).y;
+	});
 },false);
 
 map.addEventListener('mouseover',function(e){
     infotext("Information Panel: Drag to pan, scroll button to zoom, or select a feature for more information");
 },false);
-		     
+
 document.body.addEventListener('mouseout',function(e){
     if(fromNode && e.target.parentNode.getAttribute('class') == 'node'
        && fromNode != e.target.parentNode.firstChild.firstChild.nodeValue) {
@@ -205,8 +298,6 @@ function infotext(text)
 }
 
 
-
-
 var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33996197-1']);
 _gaq.push(['_trackPageview']);
@@ -216,3 +307,4 @@ _gaq.push(['_trackPageview']);
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
+
