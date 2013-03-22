@@ -453,13 +453,11 @@
         (page/xhtml
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
-          [:style {:type "text/css"} "@import \"http://serverapi.arcgisonline.com/jsapi/arcgis/3.3/js/esri/css/esri.css\";"]
-          [:style {:type "text/css"} "@import \"/iasess/css/layout.css\";"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]
           [:script {:type "text/javascript"}
            (str "var dojoConfig = { parseOnLoad: true };var mapgrp = '" (doc :context) "';")]
-          [:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
-          [:script {:src "/iasess/js/esri.js"}]]
+          #_[:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
+          #_[:script {:src "/iasess/js/esri.js"}]]
          [:body
           (popup "newconcept"
                  [:div {:class "concept-name"}
@@ -501,7 +499,10 @@
           [:div {:id "pane"}
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           [:div {:class "container_12"}
+           [:div
+            [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
+                      :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
+           #_[:div {:class "container_12"}
             [:div {:id "mapSection" :class "grid_12 rounded"}
              [:div {:id "mainMap"}
               [:div {:class "gallery-nav"}
