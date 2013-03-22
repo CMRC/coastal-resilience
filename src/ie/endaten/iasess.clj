@@ -494,21 +494,13 @@
            [:div
             [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
                       :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
-           #_[:div {:class "container_12"}
-            [:div {:id "mapSection" :class "grid_12 rounded"}
-             [:div {:id "mainMap"}
-              [:div {:class "gallery-nav"}
-               [:div {:class "gallery-nav-right" :onclick "getNext();"}]
-               [:div {:class "gallery-nav-left" :onclick "getPrevious();"}]]]]]]
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]
-          [:script {:src "http://d3js.org/d3.v3.min.js"}]
-          [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
-          [:script {:src "/iasess/js/script.js"}]]]
-         {:status 303
-          :headers {"Location" (str (base-path params) "/mode/edit")}})))))
-          
+           [:script {:src "http://d3js.org/d3.v3.min.js"}]
+           [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
+           [:script {:src "/iasess/js/script.js"}]]]])))))
+         
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
   (let [p (println req)
