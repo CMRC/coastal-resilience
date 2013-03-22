@@ -207,7 +207,7 @@ for (var d=svg.querySelectorAll('polygon'),i=0,len=d.length;i<len;++i){
 svg.addEventListener("mousemove", function(e) {
     cp = cursorPoint(e,g);
     fisheye.focus([cp.x,cp.y]);
-    d3.selectAll("ellipse")
+    d3.selectAll("#graph ellipse")
 	.attr("cx",function() { 
 	    return fisheye(this['fish']).x;
 	})
@@ -220,7 +220,7 @@ svg.addEventListener("mousemove", function(e) {
 	.attr("ry",function() { 
 	    return fisheye(this['fish']).z * 18;
 	});
-    d3.selectAll("text")
+    d3.selectAll("#graph text")
 	.attr("x",function() {
 	    if(this['fish'])
 		return fisheye(this['fish']).x;
@@ -229,7 +229,7 @@ svg.addEventListener("mousemove", function(e) {
 	    if(this['fish'])
 		return fisheye(this['fish']).y;
 	});
-    d3.selectAll("path")
+    d3.selectAll("#graph path")
 	.attr("d",function() {
 	    if(this['start'] && this['c1'])
 		return "M" + fisheye(this['start']).x + "," + fisheye(this['start']).y
@@ -237,7 +237,7 @@ svg.addEventListener("mousemove", function(e) {
 		+ " " + fisheye(this['c2']).x + "," + fisheye(this['c2']).y	
 		+ " " + fisheye(this['c3']).x + "," + fisheye(this['c3']).y;
 	});
-    d3.selectAll("polygon")
+    d3.selectAll("#graph polygon")
 	.attr("points",function() {
 	    if(this['p1'])
 		return fisheye(this['p1']).x + "," + fisheye(this['p1']).y
