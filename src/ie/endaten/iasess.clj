@@ -454,10 +454,6 @@
          [:head
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]
-          [:script {:type "text/javascript"}
-           (str "var dojoConfig = { parseOnLoad: true };var mapgrp = '" (doc :context) "';")]
-          #_[:script {:src "http://serverapi.arcgisonline.com/jsapi/arcgis/3.3compact"}]
-          #_[:script {:src "/iasess/js/esri.js"}]]
          [:body
           (popup "newconcept"
                  [:div {:class "concept-name"}
@@ -472,11 +468,7 @@
                   [:h3 "Context"]
                   (form/form-to [:post "/iasess/mode/setcontext"]
                                 (form/text-field "context")
-                                [:p (form/submit-button "Submit")])
-                  [:p [:a {:href "https://www.arcgis.com/home/signin.html"}
-                       "Register with ArcGIS.com"]
-                   "to create a group which can be used as context. All public maps "
-                   "in the group will be displayed in your map window"]])
+                                [:p (form/submit-button "Submit")])])
           [:div {:class "concepts"}
            (form/form-to {:id "file"}
                          [:get "/iasess/mode/file"]
@@ -513,10 +505,10 @@
            (edit-links-html (assoc-in params [:mode] "bar"))]
           [:script {:src "http://d3js.org/d3.v3.min.js"}]
           [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
-          [:script {:src "/iasess/js/script.js"}]])
-          {:status 303
-         :headers {"Location" (str (base-path params) "/mode/edit")}}))))
-
+          [:script {:src "/iasess/js/script.js"}]]]
+         {:status 303
+          :headers {"Location" (str (base-path params) "/mode/edit")}})))))
+          
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
   (let [p (println req)
