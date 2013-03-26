@@ -516,7 +516,7 @@
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
-          [:h2 "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
+          [:h2 "Climate Impact & Adaptation Scoping Tool"]
 	  [:div {:class "register"}
 	   [:h3 "Registered users please login"]
 	  (form/form-to [:post "/iasess/login"]
@@ -530,8 +530,7 @@
 			  " Password " (form/password-field "password")
 			  (form/submit-button "Register"))
            [:em error]
-           [:p "iasess is a tool that can help you think about the consequences of your plans. "
-            "Please don't use it to try and predict the future. Seriously."]]]))
+           [:p "This tool is designed to help you in scoping for climate impacts that may affect your area/sector of operation and in assessing the effectiveness of adaptation options.  This is achieved by enabling you to: develop a systematic understanding of the area/sector which you are assessing; analyse projected climate impacts on your area/sector and assess the degree to which key elements and process are vulnerable to the effects of climate change; and make an initial evaulation of the efficiency and cumulative consequences of current or proposed adaptation measures.."]]]))
 
 ;;(defonce my-session (cookie-store {:key "1234abcdqwer    "}))
 (def store
