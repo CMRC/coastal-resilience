@@ -3,6 +3,7 @@ var svg = d3.select("#graph1").append("svg")
     .attr("width", "1000")
     .attr("height", "1000")
     .attr("xmlns","http://www.w3.org/2000/svg");
+
 var svgNS = svg.attr('xmlns');
 
 var nodes = [];
@@ -13,9 +14,10 @@ var foreign;
 document.body.addEventListener('click',function(e){
     if(e.target.getAttribute('class') == 'node') {
 	if(editlines.length == 0)
-	    editlines.push({start: e, finish: e});
-	else
-	    lines.push({start: editlines.pop().start, finish: e});
+	    editlines.push({source: {x:e.pageX, y:e.pageY}, target: {x:e.pageX, y: e.pageY}});
+	else {
+	    lines.push({source: editlines.pop().source, target: {x:e.pageX, y:e.pageY}});
+	}
     } else if (e.target.getAttribute('class') == 'menuitem') {
 	nodes.push({name:e.target.innerText, x:e.pageX,y:e.pageY});
 	d3.xhr("/iasess/mode/json")
@@ -56,16 +58,24 @@ document.body.addEventListener('click',function(e){
     var node = svg.selectAll("text")
 	.data(nodes);
     var line = svg.selectAll("line")
-	.data(editlines.concat(lines));
+	.data(editlines);
 	      
     line.enter().append("line")
-	.attr("class", "edge")
-	.attr("x1", function(d, i) { return d.start.pageX;})
-	.attr("y1", function(d, i) { return d.start.pageY;})
-	.attr("x2", function(d, i) { return d.finish.pageX;})
-	.attr("y2", function(d, i) { return d.finish.pageY;})
-	.attr("stroke", 1);
+    	.attr("class", "edge")
+    	.attr("x1", function(d, i) { return d.source.x;})
+    	.attr("y1", function(d, i) { return d.source.y;})
+    	.attr("x2", function(d, i) { return d.target.x;})
+    	.attr("y2", function(d, i) { return d.target.y;})
+    	.attr("stroke", 1)
+    	.attr("marker-end","url(#Triangle)");
 
+    var path = svg.selectAll("path")
+	.data(lines);
+    path.enter().append("path")
+	.attr("d",d3.svg.diagonal())
+	.attr("fill", "none")
+	.attr("stroke", "black");
+    
     node.enter().append("text")
 	.attr("class", "node")
 	.attr("x", function(d, i) { return d.x - 50; })
@@ -85,8 +95,8 @@ document.body.addEventListener('click',function(e){
 document.body.addEventListener('mousemove',function(e){
     var line = svg.selectAll("line")
 	.data(editlines);
-    line.attr("x1", function(d, i) { return d.start.pageX;})
-	.attr("y1", function(d, i) { return d.start.pageY;})
+    line.attr("x1", function(d, i) { return d.source.x;})
+	.attr("y1", function(d, i) { return d.source.y;})
 	.attr("x2", e.pageX)
 	.attr("y2", e.pageY);
 },true);
