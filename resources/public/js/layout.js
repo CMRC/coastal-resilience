@@ -43,13 +43,6 @@ document.body.addEventListener('click',function(e){
 		     link.setAttribute('class','menuitem');
 		     link.appendChild(name);
 		     menuitem.appendChild(link);
-		     // menuitem.addEventListener('click',function(e){
-		     // 	 nodes.push({name:namestr, x:e.pageX,y:e.pageY});
-		     // 	 d3.xhr("/iasess/mode/json")
-		     // 	     .header("Content-Type","application/x-www-form-urlencoded")
-		     // 	     .post("nodes=" + JSON.stringify(nodes));
-		     // 	 document.getElementsByTagName('svg')[0].removeChild(foreign);
-		     // },false);
 		     menu.appendChild(menuitem);
 		     ++j;
 		 });
@@ -65,6 +58,14 @@ document.body.addEventListener('click',function(e){
     var line = svg.selectAll("line")
 	.data(editlines.concat(lines));
 	      
+    line.enter().append("line")
+	.attr("class", "edge")
+	.attr("x1", function(d, i) { return d.start.pageX;})
+	.attr("y1", function(d, i) { return d.start.pageY;})
+	.attr("x2", function(d, i) { return d.finish.pageX;})
+	.attr("y2", function(d, i) { return d.finish.pageY;})
+	.attr("stroke", 1);
+
     node.enter().append("text")
 	.attr("class", "node")
 	.attr("x", function(d, i) { return d.x - 50; })
@@ -72,13 +73,13 @@ document.body.addEventListener('click',function(e){
 	.attr("fill", "black")
 	.text(function(d, i) { return d.name; });
     
-    line.enter().append("line")
-	.attr("x1", function(d, i) { return d.start.pageX;})
-	.attr("y1", function(d, i) { return d.start.pageY;})
-	.attr("x2", function(d, i) { return d.finish.pageX;})
-	.attr("y2", function(d, i) { return d.finish.pageY;})
-	.attr("stroke", 1);
+    svg.selectAll(".edge, .node").sort(function (a, b) {
+	if (a.class == "edge" && b.class == "node") return -1; 
+	else return 1;                    
+    });
+    
     line.exit().remove();
+    console.log(e);
 },false);
 
 document.body.addEventListener('mousemove',function(e){
