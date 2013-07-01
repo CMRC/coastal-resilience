@@ -3,6 +3,7 @@ var svg = d3.select("#graph1").append("svg")
     .attr("width", "1000")
     .attr("height", "1000")
     .attr("xmlns","http://www.w3.org/2000/svg");
+var svgnode = document.getElementsByTagName('svg')[0];
 
 var svgNS = svg.attr('xmlns');
 
@@ -11,19 +12,25 @@ var lines = [];
 var editlines = [];
 var foreign;
 
+var drag = d3.behavior.drag()
+    .origin(Object)
+    .on("drag", dragmove);
+
 document.body.addEventListener('click',function(e){
-    if(e.target.getAttribute('class') == 'node') {
+    if(e.target.parentNode && e.target.parentNode.getAttribute('class') == 'node') {
 	if(editlines.length == 0)
-	    editlines.push({source: {x:e.pageX, y:e.pageY}, target: {x:e.pageX, y: e.pageY}});
+	    editlines.push({source: {x:e.pageX, y:e.pageY, node: e.target.parentNode}, 
+			    target: {x:e.pageX, y:e.pageY, node: e.target.parentNode}});
 	else {
-	    lines.push({source: editlines.pop().source, target: {x:e.pageX, y:e.pageY}});
+	    lines.push({source: editlines.pop().source, target: 
+			{x:e.pageX, y:e.pageY, node:e.target.parentNode}});
 	}
     } else if (e.target.getAttribute('class') == 'menuitem') {
 	nodes.push({name:e.target.innerText, x:e.pageX,y:e.pageY});
 	d3.xhr("/iasess/mode/json")
 	    .header("Content-Type","application/x-www-form-urlencoded")
 	    .post("nodes=" + JSON.stringify(nodes));
-	document.getElementsByTagName('svg')[0].removeChild(foreign);
+	svgnode.removeChild(foreign);
     } else {
 	var menu = document.createElementNS(xhtmlNS,'ul');
 	menu.style.left = e.pageX + 'px';
@@ -52,13 +59,13 @@ document.body.addEventListener('click',function(e){
 	body.setAttribute("xmlns",xhtmlNS);
 	foreign.appendChild(body);
 	body.appendChild(menu);
-	document.getElementsByTagName('svg')[0].appendChild(foreign);
+	svgnode.appendChild(foreign);
 	
     }
-    var node = svg.selectAll("text")
+    var node = svg.selectAll("g.node")
 	.data(nodes);
     var line = svg.selectAll("line")
-	.data(editlines);
+	.data(editlines.concat(lines));
 	      
     line.enter().append("line")
     	.attr("class", "edge")
@@ -68,20 +75,24 @@ document.body.addEventListener('click',function(e){
     	.attr("y2", function(d, i) { return d.target.y;})
     	.attr("stroke", 1)
     	.attr("marker-end","url(#Triangle)");
-
-    var path = svg.selectAll("path")
-	.data(lines);
-    path.enter().append("path")
-	.attr("d",d3.svg.diagonal())
-	.attr("fill", "none")
-	.attr("stroke", "black");
     
-    node.enter().append("text")
-	.attr("class", "node")
-	.attr("x", function(d, i) { return d.x - 50; })
-	.attr("y", function(d, i) { return d.y - 12;})
-	.attr("fill", "black")
-	.text(function(d, i) { return d.name; });
+    var textnode = node.enter().append("g")
+	.call(drag)
+	.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
+	.attr("class", "node");
+
+    textnode
+	.append("rect")
+	.attr("x", 0)
+	.attr("y", 0)
+	.attr("width", "14em")
+	.attr("height", "1em")
+	.attr("fill", "green")
+	.html(function(d, i) { return d.name; });
+
+    textnode.append("text").text("blah")
+	.attr("x", 0)
+	.attr("y", 10);
     
     svg.selectAll(".edge, .node").sort(function (a, b) {
 	if (a.class == "edge" && b.class == "node") return -1; 
@@ -99,4 +110,28 @@ document.body.addEventListener('mousemove',function(e){
 	.attr("y1", function(d, i) { return d.source.y;})
 	.attr("x2", e.pageX)
 	.attr("y2", e.pageY);
-},true);
+},false);
+
+function dragmove(d) {
+    d3.select(this)
+	.attr("transform", d.transform = "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")");
+
+    lines.forEach(function(k,v) {k.source.x = k.source.node.getAttribute("x");
+				 k.target.x = k.target.node.getAttribute("x");
+				 k.source.y = k.source.node.getAttribute("y");
+				 k.target.y = k.target.node.getAttribute("y");
+				});
+
+    var line = svg.selectAll("line")
+	.data(lines);
+    var pt    = svgnode.createSVGPoint();
+    var screen = function(s) {
+	pt.x = s.x;
+	pt.y = s.y;
+	return pt.matrixTransform(s.node.getScreenCTM());};
+    line.attr("x1", function(d, i) { return screen(d.source).x;})
+    	.attr("y1", function(d, i) { return screen(d.source).y;})
+    	.attr("x2", function(d, i) { return screen(d.target).x;})
+    	.attr("y2", function(d, i) { return screen(d.target).y;})
+    	.attr("stroke", 1);
+}
