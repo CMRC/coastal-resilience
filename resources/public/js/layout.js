@@ -17,7 +17,7 @@ var drag = d3.behavior.drag()
     .on("drag", dragmove);
 
 document.body.addEventListener('click',function(e){
-    if(e.target.parentNode && e.target.parentNode.getAttribute('class') == 'node') {
+    if(e.target.getAttribute('class') == 'arrow') {
 	if(editlines.length == 0)
 	    editlines.push({source: {x:e.pageX, y:e.pageY, node: e.target.parentNode}, 
 			    target: {x:e.pageX, y:e.pageY, node: e.target.parentNode}});
@@ -79,20 +79,32 @@ document.body.addEventListener('click',function(e){
     var textnode = node.enter().append("g")
 	.call(drag)
 	.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
-	.attr("class", "node");
+	.attr("class", "node")
+	.on("mouseover", function(e) {textnode.attr("class", "activenode");})
+	.on("mouseout", function(e) {textnode.attr("class", "node");});
 
     textnode
 	.append("rect")
 	.attr("x", 0)
 	.attr("y", 0)
+	.attr("rx", 3)
 	.attr("width", "14em")
 	.attr("height", "1em")
-	.attr("fill", "green")
 	.html(function(d, i) { return d.name; });
 
-    textnode.append("text").text("blah")
+    textnode.append("text").text("blah blah blah")
 	.attr("x", 0)
-	.attr("y", 10);
+	.attr("y", 10)
+	.attr("dx", 3)
+	.attr("dy", 3);
+
+    textnode.append("image")
+    	.attr("class", "arrow")
+	.attr("width", 20)
+	.attr("height", 20)
+	.attr("x", "6em")
+	.attr("y", "1em")
+	.attr("xlink:href", "/iasess/images/kget_list.png");
     
     svg.selectAll(".edge, .node").sort(function (a, b) {
 	if (a.class == "edge" && b.class == "node") return -1; 
