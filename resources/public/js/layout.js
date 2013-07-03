@@ -21,7 +21,6 @@ function localPoint(x,y,tgt){
 }
 
 var drag = d3.behavior.drag()
-    .origin(Object)
     .on("drag", dragmove);
 
 document.body.addEventListener('click',function(e){
@@ -66,11 +65,11 @@ function addnode(elem) {
 	.data(nodes);
     
     var textnode = node.enter().append("g")
-	.call(drag)
 	.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
 	.attr("class", "node")
 	.on("mouseover", function(e) {textnode.attr("class", "activenode");})
-	.on("mouseout", function(e) {textnode.attr("class", "node");});
+	.on("mouseout", function(e) {textnode.attr("class", "node");})
+	.call(drag);
 
     textnode
 	.append("rect")
@@ -94,7 +93,6 @@ function addnode(elem) {
 	.attr("x", "6em")
 	.attr("y", "1em")
 	.attr("xlink:href", "/iasess/images/kget_list.png");
-    
 }
 
 var screen = function(x,y,target) {
@@ -114,8 +112,10 @@ document.body.addEventListener('mousemove',function(e){
 },false);
 
 function dragmove(d) {
+    console.log(d3.event);
     d3.select(this)
-	.attr("transform", d.transform = "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")");
+	.attr("transform", d.transform = 
+	      "translate(" + (d.x = d3.event.x - 150) + "," + (d.y = d3.event.y) + ")");
 
     lines.forEach(function(k,v) {k.source.x = screen(0,0,k.source.node).x;
 				 k.target.x = screen(0,0,k.target.node).x;
@@ -125,8 +125,8 @@ function dragmove(d) {
 
     var line = svg.selectAll("line")
 	.data(lines);
-    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x;})
-    	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y;})
-    	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x;})
-    	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y;});
+    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x + 150;})
+    	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y + 5;})
+    	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x + 150;})
+    	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y + 5;});
 }
