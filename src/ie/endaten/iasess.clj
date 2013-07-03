@@ -33,7 +33,7 @@
 
 #_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
 
-(def db "http://anthony:Gereb0em@localhost:5984/resilience")
+(def db "resilience")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
@@ -234,13 +234,12 @@
                               {} links)
           nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
           links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "10,8" :overlap "9 :prism" :root (if-let [root (params :node)] root "")}]
+                                 :overlap "9 :prism" :root (if-let [root (params :node)] root "")}]
                                (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
           dot-out (dot (digraph "iasess" (apply vector (concat
                                                         (map #(subgraph % (nodes-subgraph %)) node-types)
                                                         links-subgraph))))]
       (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout (if (params :node) :twopi :fdp)})
        (= (params :format) "dot")   {:status 200	 
                                      :headers {"Content-Type" "txt"}
                                      :body dot-out}))))
@@ -257,7 +256,7 @@
                        :clojure
                        {:by-user
                         {:map (fn [doc] [[(:username doc) doc]])}}))))
-(save-views)
+#_(save-views)
 
 (defn new-concept [user concept level details doc]
   (clutch/with-db db
@@ -328,7 +327,7 @@
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
             "add"        (do
-                                                  (clutch/update-document
+                           (clutch/update-document
 			    (merge doc
 				   {:nodes (merge nodes
 						  {(encode-nodename (params :element)) (params :element)})}))
@@ -378,6 +377,12 @@
 						:weight (params :weight)}})})))
 			    {:status 303
 			     :headers {"Location" (str (base-path params) "/mode/edit")}})
+            "json"       (do
+                           (let [pos-nodes (json/read-str (params :nodes))
+                                 p (println pos-nodes)]
+                             (clutch/update-document
+                              (merge doc {:pos-nodes pos-nodes})))
+                           {:status 200 :body "ok"})
 	    "download" 
 	    {:status 200
 	     :headers {"Content-Type" "text/tab-separated-values"
@@ -479,7 +484,7 @@
                   (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "submitform('" menustr "',this,'newconcept')")}
+                                 {:onchange (str "addnode(this)")}
                                  "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"
@@ -489,17 +494,17 @@
                  physical "Physical"})
            [:a {:href "/iasess/mode/edit"} [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
-           [:div {:id "graph"}
-            (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           [:div
+           [:div {:id "map"}
             [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
                       :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
+           [:div {:id "graph"}
+            (edit-links (assoc-in params [:format] "img") nodes links concepts)]
           [:div {:id "bar"}
            [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
            (edit-links-html (assoc-in params [:mode] "bar"))]
            [:script {:src "http://d3js.org/d3.v3.min.js"}]
            [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
-           [:script {:src "/iasess/js/script.js"}]]]])))))
+           [:script {:src "/iasess/js/layout.js"}]]]])))))
          
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"

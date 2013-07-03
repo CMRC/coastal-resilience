@@ -20,7 +20,6 @@ body {
     background-color: #DCD8C2;
 }
 svg {
-    width: 100%;
 }
 #pane {
     clear: both;
@@ -31,8 +30,8 @@ svg {
     width: 50%;
 }
 #graph {
-    float: right;
-    width: 50%;
+    float: left;
+    width: 700px;
 }
 #bar {
     width: 100%;
@@ -50,6 +49,10 @@ svg {
 #bar svg g g {
     fill: darkgrey;
 }
+#map {
+    width: 700px;
+    float: left;
+}
 #pane iframe {
     height: 700px;
     width: 50%
@@ -60,7 +63,20 @@ svg {
 .menu form {
     float: left;
 }
-.edge text {
+.node text {
+    cursor: default;
+}
+.node image {
+    display: none;
+}
+.activenode image {
+    display: block;
+}
+.node rect, .activenode rect {
+    width: 10em;
+    height: 1em;
+    fill: white;
+    stroke: black;
 }
 .login {
     float: left;
@@ -200,4 +216,8 @@ h1{
 }
 .popup-in .close {
     float: right;
+}
+.node {
+    fill: grey;
+    fill-opacity: 1;
 }
