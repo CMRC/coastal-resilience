@@ -379,11 +379,11 @@
 			    {:status 303
 			     :headers {"Location" (str (base-path params) "/mode/edit")}})
             "json"       (do
-                           (let [pos-nodes (json/read-str (params :nodes))
-                                 p (println pos-nodes)]
-                             (clutch/update-document
-                              (merge doc {:pos-nodes pos-nodes})))
-                           {:status 200 :body "ok"})
+                           (when (params :nodes)
+                             (let [pos-nodes (json/read-str (params :nodes))]
+                               (clutch/update-document
+                                (merge doc {:pos-nodes pos-nodes}))))
+                           {:status 200 :body (json/write-str (vals (doc :nodes)))})
 	    "download" 
 	    {:status 200
 	     :headers {"Content-Type" "text/tab-separated-values"
@@ -440,18 +440,12 @@
 		    chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
 						 :y-label "" :vertical false)
 			    (chart/set-theme (StandardChartTheme. "theme"))
-			    #_(.setBackgroundPaint java.awt.Color/lightGray)
+			    (.setBackgroundPaint java.awt.Color/white)
 			    #_(->
 			     .getPlot
 			     .getDomainAxis
 			     (.setCategoryLabelPositions
 			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))]
-		    ;; out-stream (ByteArrayOutputStream.)
-		    ;; in-stream (do
-		    ;;     	(svg/save-svg chart out-stream :width 800 :height 150)
-		    ;;     	(ByteArrayInputStream. 
-		    ;;     	 (.to
-                    ;;              ByteArray out-stream)))]
 		(exportChartAsSVG chart))
 	      "<h2>Things you can do from here...</h2>
 <h3>Add some nodes..</h3>
@@ -486,7 +480,7 @@
                   (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "addnode(this)")}
+                                 {:onchange (str "addNode(this)")}
                                  "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"
@@ -505,8 +499,8 @@
             [:div {:id "bar"}
              [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
              (edit-links-html (assoc-in params [:mode] "bar"))]]
-           [:script {:src "http://d3js.org/d3.v3.min.js"}]
-           [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
+           [:script {:src "/iasess/js/d3.v3.min.js"}]
+           [:script {:src "/iasess/js/underscore-min.js"}]
            [:script {:src "/iasess/js/layout.js"}]]]])))))
          
 (defn auth-edit-links-html [req]
