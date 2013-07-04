@@ -30,22 +30,12 @@ document.body.addEventListener('click',function(e){
 	    lines.push({source: editlines.pop().source, target: 
 			{x:e.pageX, y:e.pageY, node:e.target.parentNode}});
 
-	    d3.xhr("/iasess/mode/json")
-		.header("Content-Type","application/x-www-form-urlencoded")
-		.post("links=" + JSON.stringify(lines));
+	    // d3.xhr("/iasess/mode/json")
+	    // 	.header("Content-Type","application/x-www-form-urlencoded")
+	    // 	.post(
+	    //	    "links=" + JSON.stringify(lines));
 	}
-	var line = svg.selectAll("line")
-	    .data(editlines.concat(lines));
-	      
-	line.enter().append("line")
-    	    .attr("class", "edge")
-    	    .attr("x1", function(d, i) { return d.source.x;})
-    	    .attr("y1", function(d, i) { return d.source.y;})
-    	    .attr("x2", function(d, i) { return d.target.x;})
-    	    .attr("y2", function(d, i) { return d.target.y;})
-    	    .attr("stroke", "black");
-    
-	line.exit().remove();
+	refresh();
 
 	svg.selectAll(".edge, .node").sort(function (a, b) {
 	    if (a.class == "edge" && b.class == "node") return -1; 
@@ -61,11 +51,13 @@ function addNode(elem) {
 }
 
 function refresh() {   
+    _.uniq(nodes,true,function(l,r) { return (l.id == r.id);});
     var node = svg.selectAll("g.node")
 	.data(nodes);
     var textnode = node.enter().append("g")
 	.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
 	.attr("class", "node")
+	.attr("id", function(d, i) { return d.id; })
 	.on("mouseover", function(e) {textnode.attr("class", "activenode");})
 	.on("mouseout", function(e) {textnode.attr("class", "node");})
 	.call(drag);
@@ -94,6 +86,21 @@ function refresh() {
 	.attr("y", "1em")
 	.attr("xlink:href", "/iasess/images/kget_list.png");
 
+    node.exit().remove();
+
+    var line = svg.selectAll("line")
+	.data(editlines.concat(lines));
+    
+    line.enter().append("line")
+    	.attr("class", "edge")
+    	.attr("x1", function(d, i) { return d.source.x;})
+    	.attr("y1", function(d, i) { return d.source.y;})
+    	.attr("x2", function(d, i) { return d.target.x;})
+    	.attr("y2", function(d, i) { return d.target.y;})
+    	.attr("stroke", "black");
+    
+    line.exit().remove();
+
     d3.xhr("/iasess/mode/json")
 	.header("Content-Type","application/x-www-form-urlencoded")
 	.post("nodes=" + JSON.stringify(nodes));
@@ -103,7 +110,8 @@ var screen = function(x,y,target) {
     var pt = svgnode.createSVGPoint();
     pt.x = x;
     pt.y = y;
-    return pt.matrixTransform(target.getScreenCTM());};
+    return pt.matrixTransform(target.getScreenCTM());
+};
 
 document.body.addEventListener('mousemove',function(e){
     var line = svg.selectAll("line")
@@ -135,9 +143,17 @@ function dragmove(d) {
 }
 
 d3.json("/iasess/mode/json",function(e,d) {
-    _.each(d,function(n) {
-	nodes.push({name:n});
-	console.log("pushed node " + n);
+    _.each(d.nodes,function(n) {
+	nodes.push({name:n.name, id:n.id, x:200, y:200});
+	console.log("pushed node " + n.id + " : " + n.name);
+    });
+    refresh();
+    _.each(d.links,function(n) {
+	var tail = svgnode.getElementById(n.tail);
+	var head = svgnode.getElementById(n.head);
+	if (head && tail)
+	    lines.push({source: {node: tail, x:0, y:0},
+		    target: {node: head, x:0, y:0}});
     });
     refresh();
 });
