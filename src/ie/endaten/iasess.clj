@@ -12,6 +12,7 @@
             [com.ashafa.clutch :as clutch]
             [com.ashafa.clutch.view-server :as view]
             [incanter.core :as incanter]
+            [incanter.svg :as svg]
             [incanter.charts :as chart]
             [hiccup.form :as form]
             [hiccup.page :as page])
@@ -54,7 +55,7 @@
         document (.createDocument domImpl nil "svg" nil)
         ;; Create an instance of the SVG Generator
         svgGenerator (SVGGraphics2D. document)
-        rect (Rectangle2D$Double. 0 0 600 300)
+        rect (Rectangle2D$Double. 0 0 700 500)
         draw (.draw chart svgGenerator rect)
         ;; Write svg file
         outputStream (ByteArrayOutputStream.)
@@ -437,19 +438,20 @@
 		    out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
 		    minusahalf (map #(- % 0.5) out)
 		    chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
-						 :y-label "")
+						 :y-label "" :vertical false)
 			    (chart/set-theme (StandardChartTheme. "theme"))
-			    (.setBackgroundPaint java.awt.Color/lightGray)
-			    (->
+			    #_(.setBackgroundPaint java.awt.Color/lightGray)
+			    #_(->
 			     .getPlot
 			     .getDomainAxis
 			     (.setCategoryLabelPositions
-			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
-		    out-stream (ByteArrayOutputStream.)
-		    in-stream (do
-				(incanter/save chart out-stream :width 600 :height 150)
-				(ByteArrayInputStream. 
-				 (.toByteArray out-stream)))]
+			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))]
+		    ;; out-stream (ByteArrayOutputStream.)
+		    ;; in-stream (do
+		    ;;     	(svg/save-svg chart out-stream :width 800 :height 150)
+		    ;;     	(ByteArrayInputStream. 
+		    ;;     	 (.to
+                    ;;              ByteArray out-stream)))]
 		(exportChartAsSVG chart))
 	      "<h2>Things you can do from here...</h2>
 <h3>Add some nodes..</h3>
@@ -494,14 +496,15 @@
                  physical "Physical"})
            [:a {:href "/iasess/mode/edit"} [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
-           [:div {:id "map"}
-            [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
-                      :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
            [:div {:id "graph"}
             (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-          [:div {:id "bar"}
-           [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-           (edit-links-html (assoc-in params [:mode] "bar"))]
+           [:div {:id "mapbar"}
+            [:div {:id "map"}
+             [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
+                       :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
+            [:div {:id "bar"}
+             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
+             (edit-links-html (assoc-in params [:mode] "bar"))]]
            [:script {:src "http://d3js.org/d3.v3.min.js"}]
            [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
            [:script {:src "/iasess/js/layout.js"}]]]])))))

@@ -1,8 +1,6 @@
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var svg = d3.select("#graph").append("svg")
     .attr("id", "fcm")
-    .attr("width", "1000")
-    .attr("height", "1000")
     .attr("xmlns","http://www.w3.org/2000/svg");
 var svgnode = document.getElementById('fcm');
 
