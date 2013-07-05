@@ -64,7 +64,7 @@ svg {
     cursor: default;
 }
 .node image {
-    display: none;
+    display: block;
 }
 .activenode image {
     display: block;

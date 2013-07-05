@@ -27,8 +27,8 @@ document.body.addEventListener('click',function(e){
 	    editlines.push({source: {x:e.clientX, y:e.clientY, node: e.target.parentNode}, 
 			    target: {x:e.clientX, y:e.clientY, node: e.target.parentNode}});
 	else {
-	    lines.push({source: editlines.pop().source, target: 
-			{x:e.pageX, y:e.pageY, node:e.target.parentNode}});
+	    lines.push({source: editlines.pop().source, 
+			target: {x:e.pageX, y:e.pageY, node:e.target.parentNode}});
 
 	    // d3.xhr("/iasess/mode/json")
 	    // 	.header("Content-Type","application/x-www-form-urlencoded")
@@ -46,45 +46,48 @@ document.body.addEventListener('click',function(e){
 
 function addNode(elem) {
     var nodename = elem.options[elem.selectedIndex].innerHTML;
-    nodes.push({name:nodename, x:400, y:100});
+    nodes.push({name:nodename, id:nodename.replace(/[^a-zA-Z0-9]/g, ""), x:400, y:100});
     refresh();
 }
 
 function refresh() {   
-    _.uniq(nodes,true,function(l,r) { return (l.id == r.id);});
+    //nodes = _.uniq(nodes,false,function(l) { return l.id;});
+    console.log(nodes);
+
     var node = svg.selectAll("g.node")
 	.data(nodes);
-    var textnode = node.enter().append("g")
-	.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
+
+    var g = node.enter().append("g");
+
+    g.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
 	.attr("class", "node")
 	.attr("id", function(d, i) { return d.id; })
-	.on("mouseover", function(e) {textnode.attr("class", "activenode");})
-	.on("mouseout", function(e) {textnode.attr("class", "node");})
+	//.on("mouseover", function(d, i) {this.setAttribute("class", "activenode");})
+	//.on("mouseout", function(d, i) {this.setAttribute("class", "node");})
 	.call(drag);
 
-    textnode
-	.append("rect")
-	.attr("x", 0)
-	.attr("y", 0)
-	.attr("rx", 3)
-	.attr("width", "20em")
-	.attr("height", "1em")
-	.html(function(d, i) { return d.name; });
+    g.append("rect")
+    	.attr("x", 0)
+    	.attr("y", 0)
+    	.attr("rx", 3)
+    	.attr("width", "20em")
+    	.attr("height", "1em")
+    	.html(function(d, i) { return d.name; });
 
-    textnode.append("text")
-	.text(function(d, i) { return d.name; })
-	.attr("x", 0)
-	.attr("y", 10)
-	.attr("dx", 3)
-	.attr("dy", 3);
+    g.append("text")
+    	.text(function(d, i) { return d.name; })
+    	.attr("x", 0)
+    	.attr("y", 10)
+    	.attr("dx", 3)
+    	.attr("dy", 3);
 
-    textnode.append("image")
+    g.append("image")
+    	.attr("width", 20)
+    	.attr("height", 20)
+    	.attr("x", "6em")
+    	.attr("y", "1em")
     	.attr("class", "arrow")
-	.attr("width", 20)
-	.attr("height", 20)
-	.attr("x", "6em")
-	.attr("y", "1em")
-	.attr("xlink:href", "/iasess/images/kget_list.png");
+    	.attr("xlink:href", "/iasess/images/kget_list.png");
 
     node.exit().remove();
 
