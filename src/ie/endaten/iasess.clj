@@ -277,10 +277,9 @@
     body]])
 
 
-(defn edit-links-html [params]
+(defn edit-links-html [params method]
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
-          p (println params)
           doc (get-user (params :id))
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
@@ -379,12 +378,23 @@
 			    {:status 303
 			     :headers {"Location" (str (base-path params) "/mode/edit")}})
             "json"       (do
+                           (when (params :links)
+                             (let [links (json/read-str (params :links))
+                                   pairs (map #(vector (keyword
+                                                        (str (get % "tail") (get % "head")))
+                                                       %) links)
+                                   lmap (reduce conj {} pairs)
+                                   p (println lmap)]
+                               (clutch/update-document
+                                (merge doc {:links lmap})))
                            (when (params :nodes)
                              (let [pos-nodes (json/read-str (params :nodes))]
                                (clutch/update-document
-                                (merge doc {:pos-nodes pos-nodes}))))
-                           {:status 200 :body (json/write-str {:nodes (doc :pos-nodes)
-                                                               :links (vals (doc :links))})})
+                                (merge doc {:pos-nodes pos-nodes})))))
+                           {:status 200 :body (if (= :get method)
+                                                (json/write-str {:nodes (doc :pos-nodes)
+                                                                 :links (vals (doc :links))})
+                                                "ok")})
 	    "download" 
 	    {:status 200
 	     :headers {"Content-Type" "text/tab-separated-values"
@@ -499,19 +509,18 @@
                        :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
             [:div {:id "bar"}
              [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-             (edit-links-html (assoc-in params [:mode] "bar"))]]
+             (edit-links-html (assoc-in params [:mode] "bar") :get)]]
            [:script {:src "/iasess/js/d3.v3.min.js"}]
            [:script {:src "/iasess/js/underscore-min.js"}]
            [:script {:src "/iasess/js/layout.js"}]]]])))))
          
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
-  (let [p (println req)
-        id (get-in req [:session "identity"])
+  (let [id (get-in req [:session "identity"])
         auth (assoc-in id [:current] (keyword (:current id)))
         p3 (set! friend/*identity* auth)]
     (friend/authorize #{"ie.endaten.iasess/iasess"}
-                      (edit-links-html (assoc (:params req) :id (:current id))))))
+                      (edit-links-html (assoc (:params req) :id (:current id)) (:request-method req)))))
 
 (defn login [params  error]
         (page/html5

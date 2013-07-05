@@ -30,11 +30,6 @@ document.body.addEventListener('click',function(e){
 	else {
 	    lines.push({source: editlines.pop().source, 
 			target: {x:e.pageX, y:e.pageY, node:e.target.parentNode}});
-
-	    // d3.xhr("/iasess/mode/json")
-	    // 	.header("Content-Type","application/x-www-form-urlencoded")
-	    // 	.post(
-	    //	    "links=" + JSON.stringify(lines));
 	}
 	refresh();
 
@@ -104,7 +99,10 @@ function refresh() {
 
     d3.xhr("/iasess/mode/json")
 	.header("Content-Type","application/x-www-form-urlencoded")
-	.post("nodes=" + JSON.stringify(nodes));
+	.post("nodes=" + JSON.stringify(nodes)
+	      + "&links=" + JSON.stringify(
+		  _.map(lines,function(l) {return {tail: l.source.node.getAttribute("id"), 
+						   head: l.target.node.getAttribute("id")}})));
 }
 
 var screen = function(x,y,target) {
@@ -156,6 +154,7 @@ d3.json("/iasess/mode/json",function(e,d) {
     });
     refresh();
     _.each(d.links,function(n) {
+	console.log(n);
 	var tail = svgnode.getElementById(n.tail);
 	var head = svgnode.getElementById(n.head);
 	if (head && tail)
