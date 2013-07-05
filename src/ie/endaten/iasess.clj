@@ -383,8 +383,7 @@
                              (let [pos-nodes (json/read-str (params :nodes))]
                                (clutch/update-document
                                 (merge doc {:pos-nodes pos-nodes}))))
-                           {:status 200 :body (json/write-str {:nodes (map #(hash-map :id (first %)
-                                                                                      :name (second %)) (doc :nodes))
+                           {:status 200 :body (json/write-str {:nodes (doc :pos-nodes)
                                                                :links (vals (doc :links))})})
 	    "download" 
 	    {:status 200

@@ -19,7 +19,8 @@ function localPoint(x,y,tgt){
 }
 
 var drag = d3.behavior.drag()
-    .on("drag", dragmove);
+    .on("drag", dragmove)
+    .on("dragend", dragmoveend);
 
 document.body.addEventListener('click',function(e){
     if(e.target.getAttribute('class') == 'arrow') {
@@ -46,14 +47,13 @@ document.body.addEventListener('click',function(e){
 
 function addNode(elem) {
     var nodename = elem.options[elem.selectedIndex].innerHTML;
-    nodes.push({name:nodename, id:nodename.replace(/[^a-zA-Z0-9]/g, ""), x:400, y:100});
+    var id = nodename.replace(/[^a-zA-Z0-9]/g, "");
+    if(!_.find(nodes,function(n){return n.id == id;}))
+	nodes.push({name:nodename, id:id, x:400, y:100});
     refresh();
 }
 
 function refresh() {   
-    //nodes = _.uniq(nodes,false,function(l) { return l.id;});
-    console.log(nodes);
-
     var node = svg.selectAll("g.node")
 	.data(nodes);
 
@@ -62,8 +62,6 @@ function refresh() {
     g.attr("transform", function(d, i) { return "translate(" + d.x + "," + d.y + ")"; })
 	.attr("class", "node")
 	.attr("id", function(d, i) { return d.id; })
-	//.on("mouseover", function(d, i) {this.setAttribute("class", "activenode");})
-	//.on("mouseout", function(d, i) {this.setAttribute("class", "node");})
 	.call(drag);
 
     g.append("rect")
@@ -136,7 +134,7 @@ function dragmove(d) {
 				 k.source.y = screen(0,0,k.source.node).y;
 				 k.target.y = screen(0,0,k.target.node).y;
 				});
-
+    
     var line = svg.selectAll("line")
 	.data(lines);
     line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x + 150;})
@@ -145,9 +143,15 @@ function dragmove(d) {
     	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y + 5;});
 }
 
+function dragmoveend(d) {
+    d3.xhr("/iasess/mode/json")
+	.header("Content-Type","application/x-www-form-urlencoded")
+	.post("nodes=" + JSON.stringify(nodes));
+}
+
 d3.json("/iasess/mode/json",function(e,d) {
     _.each(d.nodes,function(n) {
-	nodes.push({name:n.name, id:n.id, x:200, y:200});
+	nodes.push({name:n.name, id:n.id, x:n.x, y:n.y});
 	console.log("pushed node " + n.id + " : " + n.name);
     });
     refresh();
