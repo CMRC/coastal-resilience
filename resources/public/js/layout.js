@@ -106,7 +106,8 @@ function update() {
 	.post("nodes=" + JSON.stringify(nodes)
 	      + "&links=" + JSON.stringify(
 		  _.map(lines,function(l) {return {tail: l.source.node.getAttribute("id"), 
-						   head: l.target.node.getAttribute("id")}})));
+						   head: l.target.node.getAttribute("id"),
+						   weight: 2}})));
 }
 
 var screen = function(x,y,target) {

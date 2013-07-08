@@ -232,7 +232,7 @@
                           {}
                           models)))
           nodes (->
-                 (:nodes2 doc)
+                 (:nodes doc)
                  (merge
                   (reduce #(let [d (clutch/get-document (name (first %2)))
                                  m (merge %1 (:pos-nodes d))]
@@ -315,8 +315,10 @@
                                     p (println lmap)
                                     pos-nodes (json/read-str (:nodes params) :key-fn keyword)
                                     nmap (reduce conj {} (map #(vector (keyword (get % :id))
-                                                                       %) pos-nodes))]
-                                  (merge (merge doc {:nodes nmap}) {:links lmap})))
+                                                                       %) pos-nodes))
+                                    ndoc (if (:nodes params) (merge doc {:nodes nmap}) doc)
+                                    ldoc (if (:links params) (merge ndoc {:links lmap}) ndoc)]
+                                ldoc))
                              {:status 200 :body "ok"})
                            {:status 200 :body (json/write-str {:nodes (to-array (vals (doc :nodes)))
                                                                :links (vals (doc :links))})})
@@ -373,7 +375,7 @@
 		    squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
 		    out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
 		    minusahalf (map #(- % 0.5) out)
-		    chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
+		    chart (doto (chart/bar-chart (map :name (vals nodes)) minusahalf :x-label ""
 						 :y-label "" :vertical false)
 			    (chart/set-theme (StandardChartTheme. "theme"))
 			    (.setBackgroundPaint java.awt.Color/white)
@@ -383,9 +385,7 @@
 			     (.setCategoryLabelPositions
 			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))]
 		(exportChartAsSVG chart))
-	      "<h2>Things you can do from here...</h2>
-<h3>Add some nodes..</h3>
-<p>Use the drop down selectors on the second row to select a concept, then Add</p>")
+	      "Welcome. Your graph is looking a little empty. Try adding some nodes from the menus above..")
         "edit"
         (page/xhtml
          [:head
