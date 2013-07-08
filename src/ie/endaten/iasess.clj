@@ -179,72 +179,6 @@
                           :roles #{::iasess} :nodes {} :links {}
 			  :context "Iasess Dingle"})))
 
-
-(defn edit-links [params nodes links concepts]
-  (clutch/with-db db
-    (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
-          level (fn [concept] (if-let [l (first (filter #(some #{concept} (second %)) all-concepts))]
-                                (key l)
-                                ((keyword concept) concepts)))
-          g {}
-          attributes (fn [label colour shape] {:xlabel label
-                                               :label ""
-                                               :shape shape
-                                               :width "0.5"
-                                               :fixedsize :true
-                                               :style :filled
-                                               :color "white"
-                                               :fillcolor colour})
-          nodes-graph (reduce
-                       #(case (level (second %2))
-                          nil
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "black" :circle))
-                          "Drivers"
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "lightblue" :circle))
-                          "Pressures"
-                          (assoc-in %1 [:pressures (first %2)] (attributes (second %2) "skyblue" :circle))
-                          "State Changes"
-                          (assoc-in %1 [:state-changes (first %2)] (attributes (second %2) "steelblue" :circle))
-                          "Welfares"
-                          (assoc-in %1 [:impacts (first %2)] (attributes (second %2) "beige" :circle))
-                          "Responses"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown" :circle))
-                          "Physical"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "green" :circle)))
-                       g nodes)
-          links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
-                                     weight (if (= (class w) String) (num-weight w) w)]
-                                 (if (and (nodes (keyword (:head (val %2))))
-                                          (nodes (keyword (:tail (val %2)))))
-                                   (try
-                                     (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
-                                               {:tooltip (str weight)
-                                                :weight (str (* 4 (math/abs weight)))
-                                                :len (str (- 1 (math/expt 2 (math/abs weight))))
-                                                :fontsize "10"
-                                                :headlabel (str weight)
-                                                :penwidth (if (= weight 0.0) "1" (str (math/abs weight)))
-                                                :color (if (> weight 0) "blue"
-                                                           (if (= weight 0.0) "grey" "red"))
-                                                :labelfontcolor (if (> weight 0) "blue"
-                                                                    (if (= weight 0.0) "grey" "red"))
-                                                :labeldistance "2"})
-                                     (catch java.lang.ClassCastException e
-                                       (println e)))
-                                   %1))
-                              {} links)
-          nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :overlap "9 :prism" :root (if-let [root (params :node)] root "")}]
-                               (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
-          dot-out (dot (digraph "iasess" (apply vector (concat
-                                                        (map #(subgraph % (nodes-subgraph %)) node-types)
-                                                        links-subgraph))))]
-      (cond
-       (= (params :format) "dot")   {:status 200	 
-                                     :headers {"Content-Type" "txt"}
-                                     :body dot-out}))))
-
 (defn save-views []
   (clutch/with-db db
     (clutch/save-view "all-users"
@@ -298,10 +232,10 @@
                           {}
                           models)))
           nodes (->
-                 (:nodes doc)
+                 (:nodes2 doc)
                  (merge
                   (reduce #(let [d (clutch/get-document (name (first %2)))
-                                 m (merge %1 (:nodes d))]
+                                 m (merge %1 (:pos-nodes d))]
                              m)
                           {}
                           models)))
@@ -326,13 +260,6 @@
                                    {:context (params :context)}))
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "add"        (do
-                           (clutch/update-document
-			    (merge doc
-				   {:nodes (merge nodes
-						  {(encode-nodename (params :element)) (params :element)})}))
-			   {:status 303
-			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addnew"    (do
                           (when (> (count (params :element)) 0)
                             (new-concept (params :id) (params :element) (params :level) (params :details) doc))
@@ -377,24 +304,24 @@
 						:weight (params :weight)}})})))
 			    {:status 303
 			     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "json"       (do
-                           (when (params :links)
-                             (let [links (json/read-str (params :links))
-                                   pairs (map #(vector (keyword
-                                                        (str (get % "tail") (get % "head")))
-                                                       %) links)
-                                   lmap (reduce conj {} pairs)
-                                   p (println lmap)]
-                               (clutch/update-document
-                                (merge doc {:links lmap})))
-                           (when (params :nodes)
-                             (let [pos-nodes (json/read-str (params :nodes))]
-                               (clutch/update-document
-                                (merge doc {:pos-nodes pos-nodes})))))
-                           {:status 200 :body (if (= :get method)
-                                                (json/write-str {:nodes (doc :pos-nodes)
-                                                                 :links (vals (doc :links))})
-                                                "ok")})
+            "json"       (if (= :post method)
+                           (do
+                             (clutch/update-document
+                              (when (params :links)
+                                (let [links (json/read-str (params :links))
+                                      pairs (map #(vector (keyword
+                                                           (str (get % "tail") (get % "head")))
+                                                          %) links)
+                                      lmap (reduce conj {} pairs)]
+                                  (merge doc {:links lmap})))
+                              (when (params :nodes)
+                                (let [pos-nodes (json/read-str (:nodes params) :key-fn keyword)
+                                      nmap (reduce conj {} (map #(vector (keyword (get % :id))
+                                                                         %) pos-nodes))]
+                                  (merge doc {:nodes nmap}))))
+                             {:status 200 :body "ok"})
+                           {:status 200 :body (json/write-str {:nodes (to-array (vals (doc :nodes)))
+                                                               :links (vals (doc :links))})})
 	    "download" 
 	    {:status 200
 	     :headers {"Content-Type" "text/tab-separated-values"
@@ -501,8 +428,7 @@
                  physical "Physical"})
            [:a {:href "/iasess/mode/edit"} [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
-           [:div {:id "graph"}
-            (edit-links (assoc-in params [:format] "img") nodes links concepts)]
+           [:div {:id "graph"}]
            [:div {:id "mapbar"}
             [:div {:id "map"}
              [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
