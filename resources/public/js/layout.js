@@ -32,6 +32,7 @@ document.body.addEventListener('click',function(e){
 			target: {x:e.pageX, y:e.pageY, node:e.target.parentNode}});
 	}
 	refresh();
+	update();
 
 	svg.selectAll(".edge, .node").sort(function (a, b) {
 	    if (a.class == "edge" && b.class == "node") return -1; 
@@ -46,6 +47,7 @@ function addNode(elem) {
     if(!_.find(nodes,function(n){return n.id == id;}))
 	nodes.push({name:nodename, id:id, x:400, y:100});
     refresh();
+    update();
 }
 
 function refresh() {   
@@ -96,7 +98,9 @@ function refresh() {
     	.attr("stroke", "black");
     
     line.exit().remove();
+}
 
+function update() {
     d3.xhr("/iasess/mode/json")
 	.header("Content-Type","application/x-www-form-urlencoded")
 	.post("nodes=" + JSON.stringify(nodes)
@@ -157,9 +161,11 @@ d3.json("/iasess/mode/json",function(e,d) {
 	console.log(n);
 	var tail = svgnode.getElementById(n.tail);
 	var head = svgnode.getElementById(n.head);
+	var tailpt = localPoint(screen(0,0,tail).x, screen(0,0,tail).y, svgnode);
+	var headpt = localPoint(screen(0,0,head).x, screen(0,0,head).y, svgnode);
 	if (head && tail)
-	    lines.push({source: {node: tail, x:0, y:0},
-		    target: {node: head, x:0, y:0}});
+	    lines.push({source: {node: tail, x:tailpt.x, y:tailpt.y},
+			target: {node: head, x:headpt.x, y:headpt.y}});
     });
     refresh();
 });
