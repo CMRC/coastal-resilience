@@ -307,18 +307,16 @@
             "json"       (if (= :post method)
                            (do
                              (clutch/update-document
-                              (when (params :links)
-                                (let [links (json/read-str (params :links))
-                                      pairs (map #(vector (keyword
-                                                           (str (get % "tail") (get % "head")))
-                                                          %) links)
-                                      lmap (reduce conj {} pairs)]
-                                  (merge doc {:links lmap})))
-                              (when (params :nodes)
-                                (let [pos-nodes (json/read-str (:nodes params) :key-fn keyword)
-                                      nmap (reduce conj {} (map #(vector (keyword (get % :id))
-                                                                         %) pos-nodes))]
-                                  (merge doc {:nodes nmap}))))
+                              (let [links (json/read-str (:links params) :key-fn keyword)
+                                    pairs (map #(vector (keyword
+                                                         (str (get % :tail) (get % :head)))
+                                                        %) links)
+                                    lmap (reduce conj {} pairs)
+                                    p (println lmap)
+                                    pos-nodes (json/read-str (:nodes params) :key-fn keyword)
+                                    nmap (reduce conj {} (map #(vector (keyword (get % :id))
+                                                                       %) pos-nodes))]
+                                  (merge (merge doc {:nodes nmap}) {:links lmap})))
                              {:status 200 :body "ok"})
                            {:status 200 :body (json/write-str {:nodes (to-array (vals (doc :nodes)))
                                                                :links (vals (doc :links))})})
