@@ -2,6 +2,19 @@ var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var svg = d3.select("#graph").append("svg")
     .attr("id", "fcm")
     .attr("xmlns","http://www.w3.org/2000/svg");
+
+svg.append("svg:marker")
+    .attr("id", "marker")
+    .attr("viewBox", "0 0 10 10")
+    .attr("refX", 10)
+    .attr("refY", 3)
+    .attr("markerUnits", "strokeWidth")
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+    .attr("orient", "auto")
+    .append("svg:path")
+    .attr("d", "M0,0L10,3L0,6");
+
 var svgnode = document.getElementById('fcm');
 
 var svgNS = svg.attr('xmlns');
@@ -95,7 +108,9 @@ function refresh() {
     	.attr("y1", function(d, i) { return d.source.y;})
     	.attr("x2", function(d, i) { return d.target.x;})
     	.attr("y2", function(d, i) { return d.target.y;})
-    	.attr("stroke", "black");
+    	.attr("stroke", "black")
+    	.attr("stroke-width", "2")
+	.attr("marker-end", "url(#marker)");
     
     line.exit().remove();
 }
