@@ -74,26 +74,23 @@ function refresh() {
 	.attr("id", function(d, i) { return d.id; })
 	.call(drag);
 
-    g.append("rect")
-    	.attr("x", 0)
-    	.attr("y", 0)
-    	.attr("rx", 3)
-    	.attr("width", "20em")
-    	.attr("height", "1em")
-    	.html(function(d, i) { return d.name; });
+    g.append("circle")
+    	.attr("cx", 0)
+    	.attr("cy", 0)
+    	.attr("r", 15);
 
     g.append("text")
     	.text(function(d, i) { return d.name; })
-    	.attr("x", 0)
-    	.attr("y", 10)
+    	.attr("x", 20)
+    	.attr("y", 0)
     	.attr("dx", 3)
     	.attr("dy", 3);
 
     g.append("image")
     	.attr("width", 20)
     	.attr("height", 20)
-    	.attr("x", "6em")
-    	.attr("y", "1em")
+    	.attr("x", -7)
+    	.attr("y", 15)
     	.attr("class", "arrow")
     	.attr("xlink:href", "/iasess/images/kget_list.png");
 
@@ -145,7 +142,7 @@ document.body.addEventListener('mousemove',function(e){
 function dragmove(d) {
     d3.select(this)
 	.attr("transform", d.transform = 
-	      "translate(" + (d.x = d3.event.x - 150) + "," + (d.y = d3.event.y) + ")");
+	      "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")");
 
     lines.forEach(function(k,v) {k.source.x = screen(0,0,k.source.node).x;
 				 k.target.x = screen(0,0,k.target.node).x;
@@ -155,16 +152,14 @@ function dragmove(d) {
     
     var line = svg.selectAll("line")
 	.data(lines);
-    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x + 150;})
-    	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y + 5;})
-    	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x + 150;})
-    	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y + 5;});
+    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x;})
+    	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y;})
+    	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x;})
+    	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y;});
 }
 
 function dragmoveend(d) {
-    d3.xhr("/iasess/mode/json")
-	.header("Content-Type","application/x-www-form-urlencoded")
-	.post("nodes=" + JSON.stringify(nodes));
+    update();
 }
 
 d3.json("/iasess/mode/json",function(e,d) {
