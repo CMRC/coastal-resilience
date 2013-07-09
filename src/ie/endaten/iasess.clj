@@ -169,7 +169,6 @@
 
 (defn get-user [email]
   (clutch/with-db db
-    (println "email: " email)
     (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
 (defn create-user [email password context]
@@ -235,7 +234,7 @@
                  (:nodes doc)
                  (merge
                   (reduce #(let [d (clutch/get-document (name (first %2)))
-                                 m (merge %1 (:pos-nodes d))]
+                                 m (merge %1 (:nodes d))]
                              m)
                           {}
                           models)))
@@ -312,7 +311,6 @@
                                                          (str (get % :tail) (get % :head)))
                                                         %) links)
                                     lmap (reduce conj {} pairs)
-                                    p (println lmap)
                                     pos-nodes (json/read-str (:nodes params) :key-fn keyword)
                                     nmap (reduce conj {} (map #(vector (keyword (get % :id))
                                                                        %) pos-nodes))
@@ -351,27 +349,27 @@
 	    "bar"
 	    (if (seq nodes)
 	      (let [causes
-		    (incanter/trans
-		     (apply vector                                               
-			    (map                                               ;;value rows
-			     (fn [head]                                        ;;each elem as a potential head
-			       (apply vector
-				      (map                                ;;each elem as a potential tail
-				       (fn [tail]
-					 (if                         ;;loop through links, finding matches
-					     (= (name (first head))  ;; value of key,value
-						(:tail (get links    ;; tail matches tail, get weight
-							    (keyword 
-							     (str (name (first tail))
-								  (name (first head)))))))
-					   (let [w (:weight (get links (keyword
-									(str (name (first tail))
-									     (name (first head))))))]
-					     (num-weight w))
-					   0.0))               ;;no link, =zero
-				       nodes)))
-			     nodes)))
-		    states (incanter/matrix 1 (count nodes) 1)
+                    (apply vector                                               
+                           (map                                              ;;value rows
+                            (fn [[headk headv]]                              ;;each elem as a potential head
+                              (apply vector
+                                     (map                                ;;each elem as a potential tail
+                                      (fn [[tailk tailv]]
+                                        (let [link (get links    ;; tail matches tail, get weight
+                                                        (keyword 
+                                                         (str (name tailk)
+                                                              (name headk))))
+                                              p (println link " " headk)]
+                                          (if                         ;;loop through links, finding matches
+                                              (= (name headk)  ;; value of key,value
+                                                 (:head link))
+                                            (let [w (:weight link)]
+                                              (num-weight w))
+                                            0.0)))           ;;no link, =zero
+                                      nodes)))
+                            nodes))
+                    p (println causes)
+                    states (incanter/matrix 1 (count nodes) 1)
 		    squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
 		    out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
 		    minusahalf (map #(- % 0.5) out)
