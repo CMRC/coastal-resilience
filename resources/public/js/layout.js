@@ -6,7 +6,7 @@ var svg = d3.select("#graph").append("svg")
 svg.append("svg:marker")
     .attr("id", "marker")
     .attr("viewBox", "0 0 10 10")
-    .attr("refX", 10)
+    .attr("refX", 15)
     .attr("refY", 3)
     .attr("markerUnits", "strokeWidth")
     .attr("markerWidth", 10)
@@ -36,7 +36,7 @@ var drag = d3.behavior.drag()
     .on("dragend", dragmoveend);
 
 document.body.addEventListener('click',function(e){
-    if(e.target.getAttribute('class') == 'arrow') {
+    if(e.target.getAttribute('class') == 'circle') {
 	if(editlines.length == 0)
 	    editlines.push({source: {x:e.clientX, y:e.clientY, node: e.target.parentNode}, 
 			    target: {x:e.clientX, y:e.clientY, node: e.target.parentNode}});
@@ -47,10 +47,6 @@ document.body.addEventListener('click',function(e){
 	refresh();
 	update();
 
-	svg.selectAll(".edge, .node").sort(function (a, b) {
-	    if (a.class == "edge" && b.class == "node") return -1; 
-	    else return 1;                    
-	});
     }
 },false)
 
@@ -75,6 +71,7 @@ function refresh() {
 	.call(drag);
 
     g.append("circle")
+    	.attr("class", "circle")
     	.attr("cx", 0)
     	.attr("cy", 0)
     	.attr("r", 15);
@@ -86,20 +83,12 @@ function refresh() {
     	.attr("dx", 3)
     	.attr("dy", 3);
 
-    g.append("image")
-    	.attr("width", 20)
-    	.attr("height", 20)
-    	.attr("x", -7)
-    	.attr("y", 15)
-    	.attr("class", "arrow")
-    	.attr("xlink:href", "/iasess/images/kget_list.png");
-
     node.exit().remove();
 
     var line = svg.selectAll("line")
 	.data(editlines.concat(lines));
     
-    line.enter().append("line")
+    line.enter().insert("line",".node")
     	.attr("class", "edge")
     	.attr("x1", function(d, i) { return d.source.x;})
     	.attr("y1", function(d, i) { return d.source.y;})
@@ -110,6 +99,7 @@ function refresh() {
 	.attr("marker-end", "url(#marker)");
     
     line.exit().remove();
+
 }
 
 function update() {
