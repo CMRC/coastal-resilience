@@ -1,3 +1,4 @@
+"use strict";
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var svg = d3.select("#graph").append("svg")
     .attr("id", "fcm")
@@ -88,7 +89,9 @@ function refresh() {
     var line = svg.selectAll("line")
 	.data(editlines.concat(lines));
     
-    line.enter().insert("line",".node")
+    var gl = line.enter().insert("g",".node");
+
+    gl.append("line")
     	.attr("class", "edge")
     	.attr("x1", function(d, i) { return d.source.x;})
     	.attr("y1", function(d, i) { return d.source.y;})
@@ -97,6 +100,12 @@ function refresh() {
     	.attr("stroke", "black")
     	.attr("stroke-width", "2")
 	.attr("marker-end", "url(#marker)");
+
+    gl.append("text")
+	.attr("class", "weight")
+	.text("?")
+	.attr("x", function(d, i) { return d.source.x - (d.source.x - d.target.x) / 2;})
+	.attr("y", function(d, i) { return d.source.y - (d.source.y - d.target.y) / 2;});
     
     line.exit().remove();
 
@@ -146,11 +155,19 @@ function dragmove(d) {
     	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y;})
     	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x;})
     	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y;});
+
+    var text = svg.selectAll(".weight")
+	.data(lines);
+    text.attr("x", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x 
+				    - (d.source.x - d.target.x) / 2;})
+	.attr("y", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y 
+				    - (d.source.y - d.target.y) / 2;});
 }
 
 function dragmoveend(d) {
     update();
 }
+
 
 d3.json("/iasess/mode/json",function(e,d) {
     _.each(d.nodes,function(n) {

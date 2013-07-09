@@ -34,7 +34,7 @@
 
 #_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
 
-(def db "resilience")
+(def db "iasess")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
