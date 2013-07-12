@@ -209,8 +209,9 @@
     [:a {:href (str "javascript: hideconcept('" id "')") :class "close"} "Close"]
     body]])
 
-
+(def o (Object.))
 (defn edit-links-html [params method]
+  (locking o
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
           doc (get-user (params :id))
@@ -434,7 +435,7 @@
              (edit-links-html (assoc-in params [:mode] "bar") :get)]]
            [:script {:src "/iasess/js/d3.v3.min.js"}]
            [:script {:src "/iasess/js/underscore-min.js"}]
-           [:script {:src "/iasess/js/layout.js"}]]]])))))
+           [:script {:src "/iasess/js/layout.js"}]]]]))))))
          
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"

@@ -25,11 +25,15 @@ var lines = [];
 var editlines = [];
 var foreign;
 
-function localPoint(x,y,tgt){
+function localPoint(obj){
     var pt = svgnode.createSVGPoint();
-    pt.x = x; 
-    pt.y = y;
-    return pt.matrixTransform(tgt.getScreenCTM().inverse());
+    pt.x = obj.x; 
+    pt.y = obj.y;
+    return pt.matrixTransform(svgnode.getScreenCTM().inverse());
+}
+
+function localClient(e) {
+    return localPoint({x:e.clientX,y:e.clientY});
 }
 
 var drag = d3.behavior.drag()
@@ -39,11 +43,11 @@ var drag = d3.behavior.drag()
 document.body.addEventListener('click',function(e){
     if(e.target.getAttribute('class') == 'circle') {
 	if(editlines.length == 0)
-	    editlines.push({source: {x:e.clientX, y:e.clientY, node: e.target.parentNode}, 
-			    target: {x:e.clientX, y:e.clientY, node: e.target.parentNode}});
+	    editlines.push({source: {x:localClient(e).x, y:localClient(e).y, node: e.target.parentNode}, 
+			    target: {x:localClient(e).x, y:localClient(e).y, node: e.target.parentNode}});
 	else {
 	    lines.push({source: editlines.pop().source, 
-			target: {x:e.pageX, y:e.pageY, node:e.target.parentNode}});
+			target: {x:localClient(e).x, y:localClient(e).y, node:e.target.parentNode}});
 	}
 	refresh();
 	update();
@@ -86,13 +90,13 @@ function refresh() {
 
     node.exit().remove();
 
-    var line = svg.selectAll("line")
-	.data(editlines.concat(lines));
+    var line = svg.selectAll("g.edge")
+	.data(lines);
     
-    var gl = line.enter().insert("g",".node");
+    var gl = line.enter().insert("g",".node")
+    	.attr("class", "edge");
 
     gl.append("line")
-    	.attr("class", "edge")
     	.attr("x1", function(d, i) { return d.source.x;})
     	.attr("y1", function(d, i) { return d.source.y;})
     	.attr("x2", function(d, i) { return d.target.x;})
@@ -109,6 +113,22 @@ function refresh() {
     
     line.exit().remove();
 
+    var edge = svg.selectAll("g.activeedge")
+	.data(editlines);
+    
+    edge
+	.enter().insert("g",".node")
+	.attr("class", "activeedge")
+	.append("line")
+    	.attr("x1", function(d, i) { return d.source.x;})
+    	.attr("y1", function(d, i) { return d.source.y;})
+    	.attr("x2", function(d, i) { return d.target.x;})
+    	.attr("y2", function(d, i) { return d.target.y;})
+    	.attr("stroke", "black")
+    	.attr("stroke-width", "2")
+	.attr("marker-end", "url(#marker)");
+
+    edge.exit().remove();
 }
 
 function update() {
@@ -129,13 +149,15 @@ var screen = function(x,y,target) {
 };
 
 document.body.addEventListener('mousemove',function(e){
-    var line = svg.selectAll("line")
-	.data(editlines);
-    
-    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x;})
-	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y;})
-	.attr("x2", function(d, i) { return localPoint(e.clientX,e.clientY,svgnode).x;})
-	.attr("y2", function(d, i) { return localPoint(e.clientX,e.clientY,svgnode).y;});
+    if(editlines.length != 0) {
+	var line = svg.selectAll("g.activeedge line")
+	    .data(editlines);
+	
+	line.attr("x1", function(d, i) { return d.source.x;})
+	    .attr("y1", function(d, i) { return d.source.y;})
+	    .attr("x2", function(d, i) { return localClient(e).x;})
+	    .attr("y2", function(d, i) { return localClient(e).y;});
+    }
 },false);
 
 function dragmove(d) {
@@ -151,16 +173,16 @@ function dragmove(d) {
     
     var line = svg.selectAll("line")
 	.data(lines);
-    line.attr("x1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x;})
-    	.attr("y1", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y;})
-    	.attr("x2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).x;})
-    	.attr("y2", function(d, i) { return localPoint(d.target.x,d.target.y,svgnode).y;});
+    line.attr("x1", function(d, i) { return localPoint(d.source).x;})
+    	.attr("y1", function(d, i) { return localPoint(d.source).y;})
+    	.attr("x2", function(d, i) { return localPoint(d.target).x;})
+    	.attr("y2", function(d, i) { return localPoint(d.target).y;});
 
     var text = svg.selectAll(".weight")
 	.data(lines);
-    text.attr("x", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).x 
+    text.attr("x", function(d, i) { return localPoint(d.source).x 
 				    - (d.source.x - d.target.x) / 2;})
-	.attr("y", function(d, i) { return localPoint(d.source.x,d.source.y,svgnode).y 
+	.attr("y", function(d, i) { return localPoint(d.source).y 
 				    - (d.source.y - d.target.y) / 2;});
 }
 
@@ -179,8 +201,8 @@ d3.json("/iasess/mode/json",function(e,d) {
 	console.log(n);
 	var tail = svgnode.getElementById(n.tail);
 	var head = svgnode.getElementById(n.head);
-	var tailpt = localPoint(screen(0,0,tail).x, screen(0,0,tail).y, svgnode);
-	var headpt = localPoint(screen(0,0,head).x, screen(0,0,head).y, svgnode);
+	var tailpt = localPoint(screen(0,0,tail));
+	var headpt = localPoint(screen(0,0,head));
 	if (head && tail)
 	    lines.push({source: {node: tail, x:tailpt.x, y:tailpt.y},
 			target: {node: head, x:headpt.x, y:headpt.y}});
