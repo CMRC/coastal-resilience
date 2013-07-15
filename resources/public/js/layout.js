@@ -16,12 +16,18 @@ svg.append("svg:marker")
     .append("svg:path")
     .attr("d", "M0,0L10,3L0,6");
 
+svg.append("image")
+    .attr("width","50px")
+    .attr("height","50px")
+    .attr("xlink:href","/iasess/images/kget_list.png");
+
 var svgnode = document.getElementById('fcm');
 
 var svgNS = svg.attr('xmlns');
 
 var nodes = [];
 var lines = [];
+var menus = [];
 var editlines = [];
 var foreign;
 
@@ -40,20 +46,19 @@ var drag = d3.behavior.drag()
     .on("drag", dragmove)
     .on("dragend", dragmoveend);
 
-document.body.addEventListener('click',function(e){
-    if(e.target.getAttribute('class') == 'circle') {
-	if(editlines.length == 0)
-	    editlines.push({source: {x:localClient(e).x, y:localClient(e).y, node: e.target.parentNode}, 
-			    target: {x:localClient(e).x, y:localClient(e).y, node: e.target.parentNode}});
-	else {
-	    lines.push({source: editlines.pop().source, 
-			target: {x:localClient(e).x, y:localClient(e).y, node:e.target.parentNode}});
-	}
-	refresh();
-	update();
-
+function click(d,i){
+    var e = d3.event;
+    if(editlines.length == 0)
+	editlines.push({source: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d}, 
+			target: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d}});
+    else {
+	lines.push({source: editlines.pop().source, 
+		    target: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d},
+		    weight: 0});
     }
-},false)
+    refresh();
+    update();
+}
 
 function addNode(elem) {
     var nodename = elem.options[elem.selectedIndex].innerHTML;
@@ -64,6 +69,43 @@ function addNode(elem) {
     update();
 }
 
+function menu(dat,i) {
+    menus.push(1);
+    var menu = svg.selectAll("g#menu")
+	.data(menus)
+	.enter().append("g")
+	.attr("transform", "translate(" + localClient(d3.event).x + "," + localClient(d3.event).y + ")")
+	.attr("id", "menu");
+
+    menu.append("rect")
+	.attr("x", 0)
+	.attr("width", 30)
+	.attr("height", 150)
+	.attr("fill", "lightsteelblue");
+
+    menu.selectAll("text")
+	.data([{strength:'+++',index:3},
+	       {strength:'++',index:2},
+	       {strength:'+',index:1},
+	       {strength:'-',index:-1},
+	       {strength:'--',index:-2},
+	       {strength:'---',index:-3},
+	       {strength:'[x]',index:999}])
+	.enter().append("text")
+	.text(function(d,i){return d.strength;})
+	.attr("y",function(d,i) { return (i+1) * 20;})
+	.on("click",function(d,i) {setWeight(dat, d.index);});
+}
+
+function setWeight(d, weight) {
+    d.weight = weight;
+    menus.pop();
+    svg.selectAll("g#menu")
+	.data(menus)
+	.exit().remove();
+    refresh();
+    update();
+}
 function refresh() {   
     var node = svg.selectAll("g.node")
 	.data(nodes);
@@ -79,7 +121,8 @@ function refresh() {
     	.attr("class", "circle")
     	.attr("cx", 0)
     	.attr("cy", 0)
-    	.attr("r", 15);
+    	.attr("r", 15)
+	.on("click",click);
 
     g.append("text")
     	.text(function(d, i) { return d.name; })
@@ -90,6 +133,7 @@ function refresh() {
 
     node.exit().remove();
 
+    lines = _.reject(lines,function(l) { return l.weight == 999;});
     var line = svg.selectAll("g.edge")
 	.data(lines);
     
@@ -107,9 +151,13 @@ function refresh() {
 
     gl.append("text")
 	.attr("class", "weight")
-	.text("?")
+	.text(function(d, i) { return d.weight.toString();})
 	.attr("x", function(d, i) { return d.source.x - (d.source.x - d.target.x) / 2;})
-	.attr("y", function(d, i) { return d.source.y - (d.source.y - d.target.y) / 2;});
+	.attr("y", function(d, i) { return d.source.y - (d.source.y - d.target.y) / 2;})
+	.on("click", menu);
+
+    svg.selectAll(".edge text")
+	.text(function(d, i) { return d.weight;});
     
     line.exit().remove();
 
@@ -138,7 +186,9 @@ function update() {
 	      + "&links=" + JSON.stringify(
 		  _.map(lines,function(l) {return {tail: l.source.node.getAttribute("id"), 
 						   head: l.target.node.getAttribute("id"),
-						   weight: 2}})));
+						   weight: l.weight,
+						   taildatum: l.target.datum,
+						   headdatum: l.target.datum}})));
 }
 
 var screen = function(x,y,target) {
@@ -198,14 +248,15 @@ d3.json("/iasess/mode/json",function(e,d) {
     });
     refresh();
     _.each(d.links,function(n) {
-	console.log(n);
 	var tail = svgnode.getElementById(n.tail);
 	var head = svgnode.getElementById(n.head);
 	var tailpt = localPoint(screen(0,0,tail));
 	var headpt = localPoint(screen(0,0,head));
 	if (head && tail)
-	    lines.push({source: {node: tail, x:tailpt.x, y:tailpt.y},
-			target: {node: head, x:headpt.x, y:headpt.y}});
+	    lines.push({source: {node: tail, x:tailpt.x, y:tailpt.y, datum: n.taildatum},
+			target: {node: head, x:headpt.x, y:headpt.y, datum: n.headdatum},
+			weight: n.weight});
     });
     refresh();
 });
+

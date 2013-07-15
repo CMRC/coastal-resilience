@@ -60,7 +60,7 @@ svg {
 .menu form {
     float: left;
 }
-.node text {
+.node text, .edge text, #menu text {
     cursor: default;
 }
 .node image {
