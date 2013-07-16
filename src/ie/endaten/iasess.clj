@@ -32,8 +32,6 @@
            (org.apache.batik.dom GenericDOMImplementation)
            (org.apache.batik.svggen SVGGraphics2D)))
 
-#_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
-
 (def db "iasess")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
@@ -182,14 +180,15 @@
   (clutch/with-db db
     (clutch/save-view "all-users"
                       (clutch/view-server-fns
-                       :clojure
+                       :cljs
                        {:users
-                        {:map (fn [doc] (if (:username doc) [[(:username doc) doc]]))}}))
+                        {:map (fn [doc] (if (aget doc "username") 
+                                          (js/emit (aget doc "username") doc)))}}))
     (clutch/save-view "users"
                       (clutch/view-server-fns
-                       :clojure
+                       :cljs
                        {:by-user
-                        {:map (fn [doc] [[(:username doc) doc]])}}))))
+                        {:map (fn [doc] (js/emit (aget doc "username") doc))}}))))
 #_(save-views)
 
 (defn new-concept [user concept level details doc]

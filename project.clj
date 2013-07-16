@@ -11,6 +11,7 @@
                  [org.clojars.pallix/batik "1.7.0"]
                  [org.clojure/math.numeric-tower "0.0.1"]
                  [com.cemerick/friend "0.1.3"]
-                 [couch-session "1.1.1"]]
+                 [couch-session "1.1.1"]
+                 [org.clojure/clojurescript "0.0-1011"]]
   :main ie.endaten.iasess
   :ring {:handler ie.endaten.iasess/secured-app})
