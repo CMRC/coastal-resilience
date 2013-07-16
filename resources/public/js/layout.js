@@ -49,11 +49,14 @@ var drag = d3.behavior.drag()
 function click(d,i){
     var e = d3.event;
     if(editlines.length == 0)
-	editlines.push({source: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d}, 
-			target: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d}});
+	editlines.push({source: {x:localClient(e).x, y:localClient(e).y, 
+				 node: this.parentNode, datum: d}, 
+			target: {x:localClient(e).x, y:localClient(e).y, 
+				 node: this.parentNode, datum: d}});
     else {
 	lines.push({source: editlines.pop().source, 
-		    target: {x:localClient(e).x, y:localClient(e).y, node: this.parentNode, datum: d},
+		    target: {x:localClient(e).x, y:localClient(e).y, 
+			     node: this.parentNode, datum: d},
 		    weight: 0});
     }
     refresh();
@@ -106,6 +109,19 @@ function setWeight(d, weight) {
     refresh();
     update();
 }
+
+function deleteNode(d) {
+    nodes = _.without(nodes,d);
+    lines = _.reject(lines, function (l) { return l.target.datum == d; });
+    svg.selectAll("g.node")
+	.data(nodes)
+	.exit().remove();
+    svg.selectAll("g.edge")
+	.data(lines)
+	.exit().remove();
+    refresh();
+    update();
+}
 function refresh() {   
     var node = svg.selectAll("g.node")
 	.data(nodes);
@@ -125,8 +141,16 @@ function refresh() {
 	.on("click",click);
 
     g.append("text")
-    	.text(function(d, i) { return d.name; })
+	.text("[x]")
     	.attr("x", 20)
+    	.attr("y", 0)
+    	.attr("dx", 3)
+    	.attr("dy", 3)
+	.on("click",deleteNode);
+
+    g.append("text")
+    	.text(function(d, i) { return d.name; })
+    	.attr("x", 40)
     	.attr("y", 0)
     	.attr("dx", 3)
     	.attr("dy", 3);
