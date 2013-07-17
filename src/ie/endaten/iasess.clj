@@ -12,6 +12,7 @@
             [com.ashafa.clutch :as clutch]
             [com.ashafa.clutch.view-server :as view]
             [incanter.core :as incanter]
+            [incanter.svg :as svg]
             [incanter.charts :as chart]
             [hiccup.form :as form]
             [hiccup.page :as page])
@@ -31,9 +32,7 @@
            (org.apache.batik.dom GenericDOMImplementation)
            (org.apache.batik.svggen SVGGraphics2D)))
 
-#_(clutch/configure-view-server "resilience" (view/view-server-exec-string))
-
-(def db "http://anthony:Gereb0em@localhost:5984/resilience")
+(def db "iasess")
 (def lowlight "grey")
 (def highlight "cornflowerblue")
 (def positive "red")
@@ -54,7 +53,7 @@
         document (.createDocument domImpl nil "svg" nil)
         ;; Create an instance of the SVG Generator
         svgGenerator (SVGGraphics2D. document)
-        rect (Rectangle2D$Double. 0 0 600 300)
+        rect (Rectangle2D$Double. 0 0 700 500)
         draw (.draw chart svgGenerator rect)
         ;; Write svg file
         outputStream (ByteArrayOutputStream.)
@@ -168,7 +167,6 @@
 
 (defn get-user [email]
   (clutch/with-db db
-    (println "email: " email)
     (:value (first (clutch/get-view "users" :by-user {:key email})))))
 
 (defn create-user [email password context]
@@ -178,86 +176,20 @@
                           :roles #{::iasess} :nodes {} :links {}
 			  :context "Iasess Dingle"})))
 
-
-(defn edit-links [params nodes links concepts]
-  (clutch/with-db db
-    (let [node-types [:drivers :pressures :state-changes :impacts :responses ]
-          level (fn [concept] (if-let [l (first (filter #(some #{concept} (second %)) all-concepts))]
-                                (key l)
-                                ((keyword concept) concepts)))
-          g {}
-          attributes (fn [label colour shape] {:xlabel label
-                                               :label ""
-                                               :shape shape
-                                               :width "0.5"
-                                               :fixedsize :true
-                                               :style :filled
-                                               :color "white"
-                                               :fillcolor colour})
-          nodes-graph (reduce
-                       #(case (level (second %2))
-                          nil
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "black" :circle))
-                          "Drivers"
-                          (assoc-in %1 [:drivers (first %2)] (attributes (second %2) "lightblue" :circle))
-                          "Pressures"
-                          (assoc-in %1 [:pressures (first %2)] (attributes (second %2) "skyblue" :circle))
-                          "State Changes"
-                          (assoc-in %1 [:state-changes (first %2)] (attributes (second %2) "steelblue" :circle))
-                          "Welfares"
-                          (assoc-in %1 [:impacts (first %2)] (attributes (second %2) "beige" :circle))
-                          "Responses"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "brown" :circle))
-                          "Physical"
-                          (assoc-in %1 [:responses (first %2)] (attributes (second %2) "green" :circle)))
-                       g nodes)
-          links-graph (reduce #(let [w (:weight (get links (keyword (str (:head (val %2)) (:tail (val %2))))))
-                                     weight (if (= (class w) String) (num-weight w) w)]
-                                 (if (and (nodes (keyword (:head (val %2))))
-                                          (nodes (keyword (:tail (val %2)))))
-                                   (try
-                                     (assoc-in %1 [[(:tail (val %2)) (:head (val %2))]]
-                                               {:tooltip (str weight)
-                                                :weight (str (* 4 (math/abs weight)))
-                                                :len (str (- 1 (math/expt 2 (math/abs weight))))
-                                                :fontsize "10"
-                                                :headlabel (str weight)
-                                                :penwidth (if (= weight 0.0) "1" (str (math/abs weight)))
-                                                :color (if (> weight 0) "blue"
-                                                           (if (= weight 0.0) "grey" "red"))
-                                                :labelfontcolor (if (> weight 0) "blue"
-                                                                    (if (= weight 0.0) "grey" "red"))
-                                                :labeldistance "2"})
-                                     (catch java.lang.ClassCastException e
-                                       (println e)))
-                                   %1))
-                              {} links)
-          nodes-subgraph (fn [node-type] (into [#_{:rank :same}] (for [[k v] (node-type nodes-graph)] [k v])))
-          links-subgraph (into [{:stylesheet "/iasess/css/style.css" :splines :curved
-                                 :size "10,8" :overlap "9 :prism" :root (if-let [root (params :node)] root "")}]
-                               (for [[[j k] v] links-graph] [(keyword j) (keyword k) v]))
-          dot-out (dot (digraph "iasess" (apply vector (concat
-                                                        (map #(subgraph % (nodes-subgraph %)) node-types)
-                                                        links-subgraph))))]
-      (cond
-       (= (params :format) "img") (render dot-out {:format :svg :layout (if (params :node) :twopi :fdp)})
-       (= (params :format) "dot")   {:status 200	 
-                                     :headers {"Content-Type" "txt"}
-                                     :body dot-out}))))
-
 (defn save-views []
   (clutch/with-db db
     (clutch/save-view "all-users"
                       (clutch/view-server-fns
-                       :clojure
+                       :cljs
                        {:users
-                        {:map (fn [doc] (if (:username doc) [[(:username doc) doc]]))}}))
+                        {:map (fn [doc] (if (aget doc "username") 
+                                          (js/emit (aget doc "username") doc)))}}))
     (clutch/save-view "users"
                       (clutch/view-server-fns
-                       :clojure
+                       :cljs
                        {:by-user
-                        {:map (fn [doc] [[(:username doc) doc]])}}))))
-(save-views)
+                        {:map (fn [doc] (js/emit (aget doc "username") doc))}}))))
+#_(save-views)
 
 (defn new-concept [user concept level details doc]
   (clutch/with-db db
@@ -276,11 +208,11 @@
     [:a {:href (str "javascript: hideconcept('" id "')") :class "close"} "Close"]
     body]])
 
-
-(defn edit-links-html [params]
+(def o (Object.))
+(defn edit-links-html [params method]
+  (locking o
   (clutch/with-db db
     (let [if-count (fn [c] (if (:count c) (:count c) 1))
-          p (println params)
           doc (get-user (params :id))
           models (:models doc)
           avg-weights (fn [f s] (merge f {:weight (/ (+ (* (num-weight (:weight f)) (if-count f))
@@ -327,13 +259,6 @@
                                    {:context (params :context)}))
                                    {:status 303
                                     :headers {"Location" (str (base-path params) "/mode/edit")}})
-            "add"        (do
-                                                  (clutch/update-document
-			    (merge doc
-				   {:nodes (merge nodes
-						  {(encode-nodename (params :element)) (params :element)})}))
-			   {:status 303
-			    :headers {"Location" (str (base-path params) "/mode/edit")}})
 	    "addnew"    (do
                           (when (> (count (params :element)) 0)
                             (new-concept (params :id) (params :element) (params :level) (params :details) doc))
@@ -378,6 +303,23 @@
 						:weight (params :weight)}})})))
 			    {:status 303
 			     :headers {"Location" (str (base-path params) "/mode/edit")}})
+            "json"       (if (= :post method)
+                           (do
+                             (clutch/update-document
+                              (let [links (json/read-str (:links params) :key-fn keyword)
+                                    pairs (map #(vector (keyword
+                                                         (str (get % :tail) (get % :head)))
+                                                        %) links)
+                                    lmap (reduce conj {} pairs)
+                                    pos-nodes (json/read-str (:nodes params) :key-fn keyword)
+                                    nmap (reduce conj {} (map #(vector (keyword (get % :id))
+                                                                       %) pos-nodes))
+                                    ndoc (if (:nodes params) (merge doc {:nodes nmap}) doc)
+                                    ldoc (if (:links params) (merge ndoc {:links lmap}) ndoc)]
+                                ldoc))
+                             {:status 200 :body "ok"})
+                           {:status 200 :body (json/write-str {:nodes (to-array (vals (doc :nodes)))
+                                                               :links (vals (doc :links))})})
 	    "download" 
 	    {:status 200
 	     :headers {"Content-Type" "text/tab-separated-values"
@@ -407,48 +349,41 @@
 	    "bar"
 	    (if (seq nodes)
 	      (let [causes
-		    (incanter/trans
-		     (apply vector                                               
-			    (map                                               ;;value rows
-			     (fn [head]                                        ;;each elem as a potential head
-			       (apply vector
-				      (map                                ;;each elem as a potential tail
-				       (fn [tail]
-					 (if                         ;;loop through links, finding matches
-					     (= (name (first head))  ;; value of key,value
-						(:tail (get links    ;; tail matches tail, get weight
-							    (keyword 
-							     (str (name (first tail))
-								  (name (first head)))))))
-					   (let [w (:weight (get links (keyword
-									(str (name (first tail))
-									     (name (first head))))))]
-					     (num-weight w))
-					   0.0))               ;;no link, =zero
-				       nodes)))
-			     nodes)))
-		    states (incanter/matrix 1 (count nodes) 1)
+                    (apply vector                                               
+                           (map                                              ;;value rows
+                            (fn [[headk headv]]                              ;;each elem as a potential head
+                              (apply vector
+                                     (map                                ;;each elem as a potential tail
+                                      (fn [[tailk tailv]]
+                                        (let [link (get links    ;; tail matches tail, get weight
+                                                        (keyword 
+                                                         (str (name tailk)
+                                                              (name headk))))
+                                              p (println link " " headk)]
+                                          (if                         ;;loop through links, finding matches
+                                              (= (name headk)  ;; value of key,value
+                                                 (:head link))
+                                            (let [w (:weight link)]
+                                              (num-weight w))
+                                            0.0)))           ;;no link, =zero
+                                      nodes)))
+                            nodes))
+                    p (println causes)
+                    states (incanter/matrix 1 (count nodes) 1)
 		    squash (fn [out] (map #(/ 1 (inc (math/expt Math/E (unchecked-negate %)))) out))
 		    out (nth (iterate #(squash (incanter/plus (incanter/mmult causes %) %)) states) 10)
 		    minusahalf (map #(- % 0.5) out)
-		    chart (doto (chart/bar-chart (vals nodes) minusahalf :x-label ""
-						 :y-label "")
+		    chart (doto (chart/bar-chart (map :name (vals nodes)) minusahalf :x-label ""
+						 :y-label "" :vertical false)
 			    (chart/set-theme (StandardChartTheme. "theme"))
-			    (.setBackgroundPaint java.awt.Color/lightGray)
-			    (->
+			    (.setBackgroundPaint java.awt.Color/white)
+			    #_(->
 			     .getPlot
 			     .getDomainAxis
 			     (.setCategoryLabelPositions
-			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 6.0)))))
-		    out-stream (ByteArrayOutputStream.)
-		    in-stream (do
-				(incanter/save chart out-stream :width 600 :height 150)
-				(ByteArrayInputStream. 
-				 (.toByteArray out-stream)))]
+			      (CategoryLabelPositions/createUpRotationLabelPositions (/ Math/PI 3.0)))))]
 		(exportChartAsSVG chart))
-	      "<h2>Things you can do from here...</h2>
-<h3>Add some nodes..</h3>
-<p>Use the drop down selectors on the second row to select a concept, then Add</p>")
+	      "Welcome. Your graph is looking a little empty. Try adding some nodes from the menus above..")
         "edit"
         (page/xhtml
          [:head
@@ -479,7 +414,7 @@
                   (form/form-to {:id menustr}
                                 [:post "/iasess/mode/add"]
                                 (form/drop-down
-                                 {:onchange (str "submitform('" menustr "',this,'newconcept')")}
+                                 {:onchange (str "addNode(this)")}
                                  "element" (cons menustr (conj level "Custom...")))))
                 {drivers "Drivers"
                  pressures "Pressures"
@@ -489,26 +424,25 @@
                  physical "Physical"})
            [:a {:href "/iasess/mode/edit"} [:span [:b "i"] "asess:coast"]]]
           [:div {:id "pane"}
-           [:div {:id "graph"}
-            (edit-links (assoc-in params [:format] "img") nodes links concepts)]
-           [:div
-            [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
-                      :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
-          [:div {:id "bar"}
-           [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
-           (edit-links-html (assoc-in params [:mode] "bar"))]
-           [:script {:src "http://d3js.org/d3.v3.min.js"}]
-           [:script {:src "http://bost.ocks.org/mike/fisheye/fisheye.js?0.0.3"}]
-           [:script {:src "/iasess/js/script.js"}]]]])))))
+           [:div {:id "graph"}]
+           [:div {:id "mapbar"}
+            [:div {:id "map"}
+             [:iframe {:width "425" :height "350" :frameborder "0" :scrolling "no" :marginheight "0"
+                       :marginwidth "0" :src "http://mangomap.com/maps/5183/Dingle?admin_mode=false#&mini=true"}]]
+            [:div {:id "bar"}
+             [:div {:id "info-text"} "Information panel: Mouse over Menu, Mapping Panel, or Modelling Panel to begin."]
+             (edit-links-html (assoc-in params [:mode] "bar") :get)]]
+           [:script {:src "/iasess/js/d3.v3.min.js"}]
+           [:script {:src "/iasess/js/underscore-min.js"}]
+           [:script {:src "/iasess/js/layout.js"}]]]]))))))
          
 (defn auth-edit-links-html [req]
   "Some dodgy stuff here with rebinding *identity*. This is because of the clutch store messing up keywords"
-  (let [p (println req)
-        id (get-in req [:session "identity"])
+  (let [id (get-in req [:session "identity"])
         auth (assoc-in id [:current] (keyword (:current id)))
         p3 (set! friend/*identity* auth)]
     (friend/authorize #{"ie.endaten.iasess/iasess"}
-                      (edit-links-html (assoc (:params req) :id (:current id))))))
+                      (edit-links-html (assoc (:params req) :id (:current id)) (:request-method req)))))
 
 (defn login [params  error]
         (page/html5
@@ -516,7 +450,7 @@
           [:title "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
           [:style {:type "text/css"} "@import \"/iasess/css/iasess.css\";"]]
          [:body
-          [:h2 "Iasess - Ireland's Adaptive Social-Ecological Systems Simulator"]
+          [:h2 "Climate Impact & Adaptation Scoping Tool"]
 	  [:div {:class "register"}
 	   [:h3 "Registered users please login"]
 	  (form/form-to [:post "/iasess/login"]
@@ -530,8 +464,7 @@
 			  " Password " (form/password-field "password")
 			  (form/submit-button "Register"))
            [:em error]
-           [:p "iasess is a tool that can help you think about the consequences of your plans. "
-            "Please don't use it to try and predict the future. Seriously."]]]))
+           [:p "This tool is designed to help you in scoping for climate impacts that may affect your area/sector of operation and in assessing the effectiveness of adaptation options.  This is achieved by enabling you to: develop a systematic understanding of the area/sector which you are assessing; analyse projected climate impacts on your area/sector and assess the degree to which key elements and process are vulnerable to the effects of climate change; and make an initial evaulation of the efficiency and cumulative consequences of current or proposed adaptation measures.."]]]))
 
 ;;(defonce my-session (cookie-store {:key "1234abcdqwer    "}))
 (def store
