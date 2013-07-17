@@ -153,7 +153,7 @@ function refresh() {
 
     lines = _.reject(lines,function(l) { return l.weight == 999;});
     var line = svg.selectAll("g.edge")
-	.data(lines);
+	.data(lines,function(d) {return d.source.datum.id + d.target.datum.id;});
     
     var gl = line.enter().insert("g",".node")
     	.attr("class", "edge");
