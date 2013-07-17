@@ -112,7 +112,8 @@ function setWeight(d, weight) {
 
 function deleteNode(d) {
     nodes = _.reject(nodes, function (n) { return n.id == d.id;});
-    lines = _.reject(lines, function (l) { return l.target.datum == d || l.source.datum == d; });
+    lines = _.reject(lines, function (l) { 
+	return l.target.datum.id == d.id || l.source.datum.id == d.id; });
     refresh();
     update();
 }
