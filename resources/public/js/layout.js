@@ -16,11 +16,6 @@ svg.append("svg:marker")
     .append("svg:path")
     .attr("d", "M0,0L10,3L0,6");
 
-svg.append("image")
-    .attr("width","50px")
-    .attr("height","50px")
-    .attr("xlink:href","/iasess/images/kget_list.png");
-
 var svgnode = document.getElementById('fcm');
 
 var svgNS = svg.attr('xmlns');
@@ -136,7 +131,7 @@ function refresh() {
 
     g.append("text")
 	.text("[x]")
-    	.attr("x", 20)
+    	.attr("x", 15)
     	.attr("y", 0)
     	.attr("dx", 3)
     	.attr("dy", 3)
@@ -144,7 +139,7 @@ function refresh() {
 
     g.append("text")
     	.text(function(d, i) { return d.name; })
-    	.attr("x", 40)
+    	.attr("x", 35)
     	.attr("y", 0)
     	.attr("dx", 3)
     	.attr("dy", 3);
