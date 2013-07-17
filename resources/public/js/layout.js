@@ -111,20 +111,14 @@ function setWeight(d, weight) {
 }
 
 function deleteNode(d) {
-    nodes = _.without(nodes,d);
-    lines = _.reject(lines, function (l) { return l.target.datum == d; });
-    svg.selectAll("g.node")
-	.data(nodes)
-	.exit().remove();
-    svg.selectAll("g.edge")
-	.data(lines)
-	.exit().remove();
+    nodes = _.reject(nodes, function (n) { return n.id == d.id;});
+    lines = _.reject(lines, function (l) { return l.target.datum == d || l.source.datum == d; });
     refresh();
     update();
 }
 function refresh() {   
     var node = svg.selectAll("g.node")
-	.data(nodes);
+	.data(nodes,function(d) { return d.id;});
 
     var g = node.enter().append("g");
 
