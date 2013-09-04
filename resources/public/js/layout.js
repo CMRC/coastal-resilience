@@ -2,7 +2,9 @@
 var xhtmlNS = 'http://www.w3.org/1999/xhtml';
 var svg = d3.select("#graph").append("svg")
     .attr("id", "fcm")
-    .attr("xmlns","http://www.w3.org/2000/svg");
+    .attr("xmlns","http://www.w3.org/2000/svg")
+    .attr("width", 900)
+    .attr("height", 900);
 
 svg.append("svg:marker")
     .attr("id", "marker")
@@ -159,7 +161,7 @@ function refresh() {
     	.attr("x2", function(d, i) { return d.target.x;})
     	.attr("y2", function(d, i) { return d.target.y;})
     	.attr("stroke", "black")
-    	.attr("stroke-width", "2")
+    	.attr("stroke-width", "2px")
 	.attr("marker-end", "url(#marker)");
 
     gl.append("text")
@@ -186,7 +188,6 @@ function refresh() {
     	.attr("x2", function(d, i) { return d.target.x;})
     	.attr("y2", function(d, i) { return d.target.y;})
     	.attr("stroke", "black")
-    	.attr("stroke-width", "2")
 	.attr("marker-end", "url(#marker)");
 
     edge.exit().remove();
