@@ -5,6 +5,7 @@ var svg = d3.select("#graph").append("svg")
     .attr("xmlns","http://www.w3.org/2000/svg")
     .attr("width", 900)
     .attr("height",900);
+    .attr("height", 900);
 
 svg.append("svg:marker")
     .attr("id", "marker")
